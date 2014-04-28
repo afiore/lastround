@@ -1,0 +1,27 @@
+package com.lastroundapp
+
+import akka.actor.{ActorSystem, Props}
+import akka.io.IO
+import spray.can.Http
+
+import com.lastroundapp.services.VenueSearcher
+import com.lastroundapp.data.Endpoints.LatLon
+import VenueSearcher.RunSearch
+
+object Boot extends App {
+
+  // we need an ActorSystem to host our application in
+  implicit val system = ActorSystem("on-spray-can")
+
+  // create and start our service actor
+  val service = system.actorOf(Props[MyServiceActor], "demo-service")
+
+  // create a VenueSearcher actor
+  val venueSearcher = system.actorOf(Props[VenueSearcher], "venue-searcher")
+
+  // start a new HTTP server on port 8080 with our service actor as the handler
+  IO(Http) ! Http.Bind(service, interface = "localhost", port = 8080)
+
+  // perform a search (just for fun)
+  venueSearcher ! RunSearch(LatLon(51.545, -0.0553))
+}
