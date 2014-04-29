@@ -110,9 +110,7 @@ object VenueHours {
       def read(v:JsValue) = v.asJsObject.getFields("timeframes") match {
         case Seq(JsArray(timeframes)) =>
           timeframes.map(_.convertTo[TimeFrame])
-        case _ =>
-          throw new DeserializationException(
-            "TimeFrameList2Json: Cannot find 'timeframes' attribute")
+        case _ => Nil
       }
     }
 

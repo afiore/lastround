@@ -50,8 +50,7 @@ object VenueJSONProtocol extends DefaultJsonProtocol {
     def read(v:JsValue): List[Venue]  = v.asJsObject.getFields("venues") match {
       case Seq(JsArray(vs)) =>
         vs.map(_.convertTo[Venue])
-      case _ =>
-        throw new DeserializationException(""""venues" list expected"""")
+      case _ => Nil
     }
   }
 
