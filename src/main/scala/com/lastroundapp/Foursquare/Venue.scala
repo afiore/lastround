@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 
 import spray.json._
 import DefaultJsonProtocol._
-import Responses._
+import VenueHours.OpeningTime
 
 sealed case class Location(
     address: Option[String],
@@ -23,6 +23,10 @@ sealed case class Venue(
      name: String,
      location: Location,
      url: Option[String])
+
+sealed case class VenueWithOpeningHours(
+    venue: Venue,
+    openingHours: OpeningTime)
 
 object VenueConversions {
   implicit def VenueId2String(v:VenueId):String = v.id
