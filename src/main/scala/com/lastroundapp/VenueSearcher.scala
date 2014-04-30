@@ -4,7 +4,6 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 import akka.actor._
-import akka.event.Logging
 
 import spray.http._
 import spray.httpx.encoding.{Gzip, Deflate}
@@ -31,15 +30,14 @@ object VenueSearcher {
   case class GotResult(venueRes:SearchResult)
 }
 
-class VenueSearcher extends Actor {
+class VenueSearcher extends Actor with ActorLogging
+                                  with LoggeedPipeline[VenueSearcher.SearchResult] {
   import VenueSearcher._
   import context.dispatcher
 
-  val log = Logging(context.system, this)
-
   def receive: Receive = {
     case RunSearch(ll) => {
-      val fRes = pipeline(Get(endpointUri(ll)))
+      val fRes = pipeline[SearchResult](Get(endpointUri(ll)))
       val res  = Await.result(fRes, 5.seconds).asInstanceOf[SearchResult]
       sender ! GotResult(res)
     }
@@ -47,19 +45,4 @@ class VenueSearcher extends Actor {
 
   private def endpointUri(ll:LatLon) =
     toUri(new AuthenticatedEndpoint(new VenueSearchEndpoint(ll)))
-
-  private val logRequest: HttpRequest => HttpRequest =
-    { r => log.info(s"Issuing request: $r"); r }
-
-  private val logResponse: SearchResult => SearchResult =
-    { sr => log.info(s"Got response: $sr"); sr }
-
-  private val pipeline =
-    (encode(Gzip)
-      ~> addHeader(Accept(`application/json`))
-      ~> logRequest
-      ~> sendReceive
-      ~> decode(Deflate)
-      ~> unmarshal[SearchResult]
-      ~> logResponse)
 }

@@ -1,16 +1,14 @@
 package com.lastroundapp.data
 
-import com.typesafe.config.ConfigFactory
-
 import spray.http._
 import spray.http.Uri._
 import spray.http.HttpMethods._
 import scala.language.implicitConversions
 
+import com.lastroundapp.Settings
+
 object Endpoints {
   import VenueConversions._
-
-  val conf = ConfigFactory.load()
 
   type Param = (String, String)
 
@@ -22,7 +20,7 @@ object Endpoints {
   def toParam[A](a: A)(implicit tp: ToParam[A]) = tp.toParam(a)
 
   trait EndpointUri[A] {
-    val host = Uri("https://api.foursquare.com")
+    val host = Settings.foursquareHost
     def path(a:A): Path
     def params(a:A): Set[Param]      = Set[Param]()
     def toUri(a: A): Uri             = host.withPath(path(a)).withQuery(params(a).toMap)
@@ -113,7 +111,7 @@ object Endpoints {
 
   object ApiVersion {
     val default =
-      ApiVersion(conf.getInt("lastround.foursquare.api-version"))
+      ApiVersion(Settings.foursquareApiVersion)
   }
   case class ApiVersion(version: Int) extends AnyVal
 
@@ -124,7 +122,7 @@ object Endpoints {
 
   object AccessToken {
     val default =
-      AccessToken(conf.getString("lastround.foursquare.access-token"))
+      AccessToken(Settings.foursquareAccessToken)
   }
   case class AccessToken(token: String) extends AnyVal
 
