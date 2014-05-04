@@ -52,39 +52,6 @@ object Responses {
           case "server_error"       => ServerError(msg)
           case "other"              => OtherError(msg)
       }
-
     }
   }
-
-  //trait FoursquareResponseJson {
-  //  def respOrError(rootV:JsValue):Either[ApiError,JsObject] = {
-  //    rootV.asJsObject.getFields("meta", "response") match {
-  //      case Seq(meta:JsObject, resp:JsObject) =>
-  //        parseResponse(meta, resp)
-  //      case _ =>
-  //        Left(OtherError("Cannot find \"meta\" attribute"))
-  //    }
-  //  }
-
-  //  private def parseResponse(meta:JsObject, resp:JsObject):Either[ApiError,JsObject] = {
-  //     meta.getFields("code", "errorType", "errorDetail") match {
-  //       case Seq(JsNumber(n)) if n == 200 =>
-  //         Right(resp)
-  //       case Seq(_, JsString(errType), JsString(errDetail)) =>
-  //         Left(parseApiError(errType, errDetail))
-  //       case other => println(other); throw new DeserializationException("WTF!")
-  //     }
-  //  }
-
-  //  private def parseApiError(errType:String, msg:String):ApiError = errType match {
-  //      case "param_error"        => ParamError(msg)
-  //      case "invalid_auth"       => InvalidAuth(msg)
-  //      case "endpoint_error"     => EndpointError(msg)
-  //      case "not_authorized"     => NotAuthorised(msg)
-  //      case "rate_limit_exceded" => RateLimitExceded(msg)
-  //      case "deprecated"         => Deprecated(msg)
-  //      case "server_error"       => ServerError(msg)
-  //      case "other"              => OtherError(msg)
-  //  }
-  //}
 }
