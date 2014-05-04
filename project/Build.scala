@@ -43,8 +43,8 @@ object Dependencies {
 }
 
 object Resolvers {
-  val sprayRepo = "spray repo" at "http://repo.spray.io/"
-  val resolvers = Seq(sprayRepo)
+  val sprayRepo        = "spray repo" at "http://repo.spray.io/"
+  val resolvers        = Seq(sprayRepo)
 }
 
 object LastroundauthBuild extends Build {
