@@ -62,6 +62,9 @@ object VenueHours {
     def includesToday: Boolean = days.contains(WeekDay.today)
   }
 
+  object VenueOpeningHours {
+    def empty = VenueOpeningHours(List.empty, List.empty)
+  }
   sealed case class VenueOpeningHours(
       hours: List[TimeFrame],
       popular: List[TimeFrame])

@@ -6,46 +6,89 @@ import scala.concurrent.duration._
 import akka.actor._
 import akka.event.Logging
 
-import spray.httpx.encoding.{Gzip, Deflate}
-import spray.client.pipelining._
+import spray.client.pipelining.Get
 
+import com.lastroundapp.Settings
 import com.lastroundapp.data.Endpoints._
 import com.lastroundapp.data.Responses._
 import com.lastroundapp.data._
 
 import VenueHours.VenueOpeningHours
-import VenueJSONProtocol._
-import FSResponseJsonProtocol._
 
 object VenueSearcher {
-  type SearchResult = FoursquareResponse[List[Venue]]
+  type SearchResult  = FoursquareResponse[List[Venue]]
+  type VenueHoursMap = scala.collection.immutable.HashMap[VenueId, VenueOpeningHours]
 
   case class RunSearch(ll:LatLon)
-  case class VenueHoursFor(vid:VenueId, vh:Option[VenueOpeningHours])
-  case class GotResult(venueRes:SearchResult)
+  case class GotVenuesWithOpeningHours(results: List[VenueWithOpeningHours])
+  case object VenueHoursTimedout
 }
 
-class VenueSearcher extends Actor with ActorLogging
-                                  with LoggablePipeline {
-  import VenueSearcher._
+class VenueSearcher(workerPool:ActorRef) extends Actor with Stash
+                                         with ActorLogging
+                                         with LoggablePipeline {
   import context.dispatcher
-  import spray.httpx.unmarshalling.Deserializer.fromFunction2Converter
+  import VenueSearcher._
+  import VenueHoursWorker._
+  import VenueJSONProtocol._
+  import FSResponseJsonProtocol._
 
-  def receive: Receive = {
+  private var venueHours = new VenueHoursMap
+
+  def handleRunSearch: Receive = {
     case RunSearch(ll) => {
-      val res = runSearch(ll)
-      sender ! GotResult(res)
+
+      okOrLogError(runSearch(ll)) { vs =>
+        vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id) }
+        context.system.scheduler.scheduleOnce(searcherTimeout(vs), self, VenueHoursTimedout)
+        context.become(handleVenueHours(sender, vs))
+      }
     }
 
-    case VenueHoursFor(vid, vhs) => {
+    case GotVenueHoursFor(vid, _) =>
+      log.warning(s"Received outdated GotVenueHoursFor message for: $vid")
+  }
+
+  def handleVenueHours(recipient:ActorRef, vs:List[Venue]): Receive = {
+    case rs:RunSearch =>
+      stash()
+    case VenueHoursTimedout => {
+      log.warning("received VenueHoursTimedout!")
+      cleanupAndSendResponse(recipient, vs)
+    }
+
+    case GotVenueHoursFor(vid, oVh) => {
+      venueHours = venueHours + (vid -> oVh.getOrElse(VenueOpeningHours.empty))
+
+      if (venueHoursIsComplete(vs))
+        cleanupAndSendResponse(recipient, vs)
     }
   }
 
-  private def runSearch(ll:LatLon): SearchResult = {
-    val fRes = pipeline(Get(endpointUri(ll)))
-    Await.result(fRes, 5.seconds).asInstanceOf[SearchResult]
-  }
+  def receive = handleRunSearch
+
+  private def searcherTimeout(vs:List[Venue]):FiniteDuration =
+    (vs.size * Settings.venueHoursWorkerTimeout).seconds
+
+  private def addOpeningHours(vs:List[Venue]):List[VenueWithOpeningHours] =
+    vs.map { v => v.withOpeningHours(venueHours.get(v.id)) }
+
+  private def venueHoursIsComplete(vs:List[Venue]):Boolean =
+    venueHours.keys == vs.map(_.id).toSet
 
   private def endpointUri(ll:LatLon) =
     toUri(new AuthenticatedEndpoint(new VenueSearchEndpoint(ll)))
+
+  private def runSearch(ll:LatLon): SearchResult = {
+    val fRes    = pipeline[SearchResult](Get(endpointUri(ll)))
+    val timeout = Settings.venueSearcherTimeout
+    Await.result(fRes, timeout.seconds).asInstanceOf[SearchResult]
+  }
+
+  private def cleanupAndSendResponse(recipient: ActorRef, vs:List[Venue]) = {
+    log.info(s"Got venues: ${vs.size}, venueHours: ${venueHours.size}")
+    recipient ! GotVenuesWithOpeningHours(addOpeningHours(vs))
+    venueHours = new VenueHoursMap
+    context.become(handleRunSearch)
+  }
 }

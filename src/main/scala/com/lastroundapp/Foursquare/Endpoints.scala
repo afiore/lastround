@@ -104,7 +104,8 @@ object Endpoints {
   case class VenueHoursEndpoint(venueId: VenueId) extends Endpoint
 
   implicit object VenueHoursEndpointUri extends EndpointUri[VenueHoursEndpoint] {
-    def path(ep:VenueHoursEndpoint) = Path("/v2/venues/hours") / ep.venueId
+    def path(ep:VenueHoursEndpoint) =
+      Path("/v2/venues") / ep.venueId / "hours"
   }
 
   // AuthenticatedEndpoint
