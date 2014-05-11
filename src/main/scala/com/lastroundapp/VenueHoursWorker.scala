@@ -4,7 +4,6 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 import akka.actor._
-import akka.event.Logging
 
 import spray.client.pipelining.Get
 
@@ -31,15 +30,16 @@ class VenueHoursWorker extends Actor with ActorLogging
 
   def receive: Receive = {
     case GetVenueHoursFor(vid) =>
-      okOrLogError(fetchVenueHours(vid)) { vhs =>
-        sender ! GotVenueHoursFor(vid, Some(vhs))
+      okOrElse(fetchVenueHours(vid))(vhs => sender ! GotVenueHoursFor(vid, Some(vhs))){ err =>
+        log.warning(s"a Foursquare API error occurred: $err")
+        sender ! GotVenueHoursFor(vid, None)
       }
   }
 
   private def fetchVenueHours(vid:VenueId):VenueHoursResponse = {
     val fVh     = pipeline[VenueHoursResponse](Get(endpointUri(vid)))
     val timeout = Settings.venueHoursWorkerTimeout
-    Await.result(fVh, timeout.seconds).asInstanceOf[VenueHoursResponse]
+    Await.result(fVh, timeout.seconds)
   }
 
   private def endpointUri(vid:VenueId) =

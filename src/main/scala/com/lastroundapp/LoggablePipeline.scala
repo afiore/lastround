@@ -5,8 +5,7 @@ import scala.concurrent.{Future, ExecutionContext}
 
 import spray.http.{HttpRequest, HttpResponse, HttpMethods, HttpHeaders, MediaTypes}
 import spray.httpx.encoding.{Gzip, Deflate}
-import spray.httpx.unmarshalling.{FromResponseUnmarshaller}
-import spray.httpx.SprayJsonSupport
+import spray.httpx.unmarshalling.FromResponseUnmarshaller
 
 import spray.client.pipelining._
 
