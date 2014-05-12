@@ -3,8 +3,7 @@ package com.lastroundapp.data
 import scala.language.implicitConversions
 
 import spray.json._
-import DefaultJsonProtocol._
-import VenueHours.{OpeningTime, VenueOpeningHours}
+import VenueHours.VenueOpeningHours
 
 sealed case class Location(
     address: Option[String],
@@ -37,7 +36,6 @@ object VenueConversions {
 }
 
 object VenueJSONProtocol extends DefaultJsonProtocol {
-  import VenueConversions._
 
   implicit object VenueIdFormat extends JsonFormat[VenueId] {
     def write(vId:VenueId):JsValue = ???

@@ -1,31 +1,22 @@
 package com.lastroundapp.services
 
 import akka.actor._
+import akka.event.LoggingAdapter
+
 import scala.concurrent.{Future, ExecutionContext}
 
-import spray.http.{HttpRequest, HttpResponse, HttpMethods, HttpHeaders, MediaTypes}
+import spray.http.{HttpRequest, HttpResponse, HttpHeaders, MediaTypes}
 import spray.httpx.encoding.{Gzip, Deflate}
 import spray.httpx.unmarshalling.FromResponseUnmarshaller
 
 import spray.client.pipelining._
-
-import HttpMethods._
 import HttpHeaders._
 import MediaTypes._
-import com.lastroundapp.data.Responses._
 
-trait LoggablePipeline { self:ActorLogging =>
+trait LoggablePipeline {
   import spray.httpx.RequestBuilding._
 
-  def okOrLogError[T](resp: FoursquareResponse[T])(onOk: T => Unit) =
-    okOrElse(resp)(onOk) { apiErr =>
-      log.error(s"a Foursquare API error has occurred: $apiErr")
-    }
-
-  def okOrElse[T](resp: FoursquareResponse[T])(onOk: T => Unit)(onError: ApiError => Unit): Unit = resp match {
-    case ResponseOK(result) => onOk(result)
-    case ResponseError(err) => onError(err)
-  }
+  val log: LoggingAdapter
 
   def pipeline[T: FromResponseUnmarshaller](req:HttpRequest)(
       implicit ac:ActorContext, ec:ExecutionContext): Future[T] = {
@@ -43,8 +34,8 @@ trait LoggablePipeline { self:ActorLogging =>
   }
 
   private val logRequest: HttpRequest => HttpRequest =
-    { r => log.debug(s"Issuing request: $r"); r }
+    { r => log.debug(s"Issuing request:{}", r); r }
 
   private val logResponse: HttpResponse => HttpResponse =
-    { r => log.debug(s"Got response: $r"); r }
+    { r => log.debug(s"Got response: {}", r); r }
 }

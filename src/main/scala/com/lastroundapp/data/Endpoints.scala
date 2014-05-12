@@ -2,7 +2,6 @@ package com.lastroundapp.data
 
 import spray.http._
 import spray.http.Uri._
-import spray.http.HttpMethods._
 import scala.language.implicitConversions
 
 import com.lastroundapp.Settings
@@ -28,29 +27,31 @@ object Endpoints {
   def toUri[A](a: A)(implicit ev:EndpointUri[A])       = ev.toUri(a)
   def toUriStirng[A](a: A)(implicit ev:EndpointUri[A]) = ev.toUri(a).toString()
 
+  object LatLon {
+    implicit object LatLonToParam extends ToParam[LatLon] {
+      val paramName              = "ll"
+      def paramValue(ll: LatLon) =
+        List("%.3f".format(ll.lat), "%.3f".format(ll.lon)).mkString(",")
+    }
+  }
   sealed case class LatLon(lat:Double, lon:Double)
 
-  implicit object LatLonToParam extends ToParam[LatLon] {
-    val paramName              = "ll"
-    def paramValue(ll: LatLon) =
-      List("%.3f".format(ll.lat), "%.3f".format(ll.lon)).mkString(",")
+  object Intent {
+    implicit object IntentToParam extends ToParam[Intent] {
+      val paramName                 = "intent"
+      def paramValue(intent:Intent) = intent match {
+        case CheckIn => "checkin"
+        case Browse  => "browse"
+        case Global  => "global"
+        case Match   => "match"
+      }
+    }
   }
-
   sealed trait Intent
   object CheckIn extends Intent
   object Browse extends Intent
   object Global  extends Intent
   object Match   extends Intent
-
-  implicit object IntentToParam extends ToParam[Intent] {
-    val paramName                 = "intent"
-    def paramValue(intent:Intent) = intent match {
-      case CheckIn => "checkin"
-      case Browse  => "browse"
-      case Global  => "global"
-      case Match   => "match"
-    }
-  }
 
   sealed case class Category(val id:String)
   object Category {
@@ -80,7 +81,14 @@ object Endpoints {
   sealed abstract class Endpoint
 
   // VenueSearchEndpoint
-
+  object VenueSearchEndpoint {
+    implicit object VenueSearchEndpointUri extends EndpointUri[VenueSearchEndpoint] {
+      def path(ep:VenueSearchEndpoint)             = Path("/v2/venues/search")
+      override def params(ep: VenueSearchEndpoint) = Set(
+        toParam(ep.latLon), toParam(ep.intent), toParam(ep.radius), toParam(ep.categories)
+      )
+    }
+  }
   case class VenueSearchEndpoint(
       latLon: LatLon,
       categories: Set[Category],
@@ -92,59 +100,49 @@ object Endpoints {
       this(_latLon, Category.defaultSet, Browse, Radius(800))
   }
 
-  implicit object VenueSearchEndpointUri extends EndpointUri[VenueSearchEndpoint] {
-    def path(ep:VenueSearchEndpoint)             = Path("/v2/venues/search")
-    override def params(ep: VenueSearchEndpoint) = Set(
-      toParam(ep.latLon), toParam(ep.intent), toParam(ep.radius), toParam(ep.categories)
-    )
-  }
-
   // VenueHoursEndpoint
-
-  case class VenueHoursEndpoint(venueId: VenueId) extends Endpoint
-
-  implicit object VenueHoursEndpointUri extends EndpointUri[VenueHoursEndpoint] {
-    def path(ep:VenueHoursEndpoint) =
-      Path("/v2/venues") / ep.venueId / "hours"
+  object VenueHoursEndpoint {
+    implicit object VenueHoursEndpointUri extends EndpointUri[VenueHoursEndpoint] {
+      def path(ep:VenueHoursEndpoint) =
+        Path("/v2/venues") / ep.venueId / "hours"
+    }
   }
+  case class VenueHoursEndpoint(venueId: VenueId) extends Endpoint
 
   // AuthenticatedEndpoint
 
   object ApiVersion {
-    val default =
-      ApiVersion(Settings.foursquareApiVersion)
+    val default = ApiVersion(Settings.foursquareApiVersion)
+    implicit object ApiVersion2Param extends ToParam[ApiVersion] {
+      val paramName = "v"
+      def paramValue(v:ApiVersion) = v.version.toString
+    }
   }
   case class ApiVersion(version: Int) extends AnyVal
 
-  implicit object ApiVersion2Param extends ToParam[ApiVersion] {
-    val paramName = "v"
-    def paramValue(v:ApiVersion) = v.version.toString
-  }
-
   object AccessToken {
-    val default =
-      AccessToken(Settings.foursquareAccessToken)
+    implicit object AccessToken2Param extends ToParam[AccessToken] {
+      val paramName = "oauth_token"
+      def paramValue(t:AccessToken) = t.token
+    }
+    val default = AccessToken(Settings.foursquareAccessToken)
   }
   case class AccessToken(token: String) extends AnyVal
 
-  implicit object AccessToken2Param extends ToParam[AccessToken] {
-    val paramName = "oauth_token"
-    def paramValue(t:AccessToken) = t.token
-  }
+  object AuthenticatedEndpoint {
+    implicit def aep2EndpointUri[E: EndpointUri] = new EndpointUri[AuthenticatedEndpoint[E]] {
+      def path(aep:AuthenticatedEndpoint[E]) =
+        implicitly[EndpointUri[E]].path(aep.endpoint)
 
+      override def params(aep:AuthenticatedEndpoint[E]) =
+        implicitly[EndpointUri[E]].params(aep.endpoint) ++
+          Set(toParam(aep.version), toParam(aep.token))
+    }
+  }
   sealed case class AuthenticatedEndpoint[E: EndpointUri](
       endpoint:E,
       token: AccessToken,
       version: ApiVersion) {
     def this(ep:E) = this(ep, AccessToken.default, ApiVersion.default)
-  }
-
-  implicit def aep2EndpointUri[E: EndpointUri] = new EndpointUri[AuthenticatedEndpoint[E]] {
-    def path(aep:AuthenticatedEndpoint[E]) =
-      implicitly[EndpointUri[E]].path(aep.endpoint)
-
-    override def params(aep:AuthenticatedEndpoint[E]) =
-      implicitly[EndpointUri[E]].params(aep.endpoint) ++
-        Set(toParam(aep.version), toParam(aep.token))
   }
 }

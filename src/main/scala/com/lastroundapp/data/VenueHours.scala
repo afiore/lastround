@@ -4,7 +4,6 @@ import scala.language.implicitConversions
 import java.util.Calendar
 
 import spray.json._
-import DefaultJsonProtocol._
 
 object VenueHours {
 
