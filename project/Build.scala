@@ -24,7 +24,7 @@ object Dependencies {
   val akkaTestkit  = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
   val scalaLogging = "com.typesafe" %% "scalalogging-slf4j" % "1.0.1"
   val logback      = "ch.qos.logback" % "logback-classic" % "1.1.2"
-  val specs2       = "org.specs2" %% "specs2" % "2.3.11" % "test"
+  val scalaTest    = "org.scalatest" % "scalatest_2.10" % "2.1.4" % "test"
   val mockito      = "org.mockito" % "mockito-core" % "1.9.5" % "test"
   val commonDeps   = Seq(
     sprayCan,
@@ -37,7 +37,7 @@ object Dependencies {
     akkaTestkit,
     scalaLogging,
     logback,
-    specs2,
+    scalaTest,
     mockito
   )
 }

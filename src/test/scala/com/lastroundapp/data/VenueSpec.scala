@@ -1,7 +1,6 @@
 package com.lastroundapp.data
 
-import org.specs2.mutable._
-
+import org.scalatest._
 import spray.json._
 
 import Responses._
@@ -9,7 +8,8 @@ import DefaultJsonProtocol._
 import VenueJSONProtocol._
 import FSResponseJsonProtocol._
 
-class VenueSpec extends Specification {
+class VenueSpec extends FlatSpec with Matchers with Inside {
+
   def json(s:String)          = JsonParser(s)
   def jsonFile(f:String)      = json(io.Source.fromFile(f).mkString)
   def parseResponse(f:String) = jsonFile(f).convertTo[FoursquareResponse[List[Venue]]]
@@ -42,34 +42,29 @@ class VenueSpec extends Specification {
   val validSearchResultPath = "src/test/resources/venues-search.json"
   val invalidSearchResultPath = "src/test/resources/venues-search-error.json"
 
-  "VenueJSONProtocol" should {
+  "VenueJSONProtocol" should "deserializes a single venue" in {
+    json(validVenueJson).convertTo[Venue] should be(venue)
+  }
 
-    "deserializes a single venue" in {
-      json(validVenueJson).convertTo[Venue] must_== venue
+  it should "raise an error when format is not valid" in {
+    intercept[DeserializationException] {
+      json(invalidVenueJson).convertTo[Venue]
     }
+  }
 
-    "raise an error when format is not valid" in {
-      json(invalidVenueJson).convertTo[Venue] must throwA[DeserializationException]
+  it should "deserialize a list of venues" in {
+    json(validVenuesJson).convertTo[List[Venue]] should be(List(venue))
+  }
+
+  it should "parse a successful Foursquare result" in {
+    inside(parseResponse(validSearchResultPath)) {
+      case ResponseOK(vs) => vs should not be empty
     }
+  }
 
-    "deserialize a list of venues" in {
-      json(validVenuesJson).convertTo[List[Venue]] must_== List(venue)
-    }
-
-    "parse a successful Foursquare result" in {
-      parseResponse(validSearchResultPath) must beLike {
-        case ResponseOK(vs :: _) => ok
-      }
-    }
-
-    "parse an unsuccessful Foursquare result" in {
-      parseResponse(invalidSearchResultPath) must beLike {
-        case ResponseError(ParamError(msg)) if !msg.isEmpty => ok
-      }
-    }
-
-    "omits invalid records" in {
-      todo
+  it should "parse an unsuccessful Foursquare result" in {
+    inside(parseResponse(invalidSearchResultPath)) {
+      case ResponseError(ParamError(msg)) => msg should not be empty
     }
   }
 }

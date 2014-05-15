@@ -11,6 +11,7 @@ import com.lastroundapp.services.FoursquareClientImpl
 import com.lastroundapp.actors.{VenueSearcher, VenueHoursWorker}
 import VenueSearcher.RunSearch
 
+
 object Boot extends App {
 
   // we need an ActorSystem to host our application in
