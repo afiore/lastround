@@ -10,7 +10,7 @@ import VenueHours._
 object FoursquareTestClient {
   val venue1         =
     Venue(
-      VenueId("test-vid-1"),
+      VenueId("venue-1"),
       "venue-1",
       Location(
         Some("Address1"),
@@ -20,7 +20,7 @@ object FoursquareTestClient {
 
   val venue2         =
     Venue(
-      VenueId("test-vid-2"),
+      VenueId("venue-2"),
       "venue-2",
       Location(
         Some("Address2"),

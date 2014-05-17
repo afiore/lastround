@@ -30,4 +30,5 @@ object Boot extends App {
   IO(Http) ! Http.Bind(service, interface = "localhost", port = 8080)
   // perform a search (just for fun)
   venueSearcher ! RunSearch(LatLon(51.545, -0.0553))
+  venueSearcher ! RunSearch(LatLon(51.545, -0.0553))
 }

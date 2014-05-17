@@ -10,7 +10,7 @@ import com.lastroundapp.data.Responses._
 import com.lastroundapp.data._
 
 import VenueHours.VenueOpeningHours
-import com.lastroundapp.services.{LoggablePipeline, FoursquareClient}
+import com.lastroundapp.services.FoursquareClient
 
 object VenueSearcher {
   type SearchResult  = FoursquareResponse[List[Venue]]
@@ -21,10 +21,11 @@ object VenueSearcher {
   case object VenueHoursTimedOut
 }
 
-class VenueSearcher(val fsClient:FoursquareClient, val workerPool:ActorRef) extends Actor
-                                                                            with Stash
-                                                                            with ActorLogging
-                                                                            with ResponseHandler {
+class VenueSearcher(
+    val fsClient:FoursquareClient,
+    val workerPool:ActorRef) extends Actor with ActorLogging
+                                           with Stash
+                                           with ResponseHandler {
   import context.dispatcher
   import VenueSearcher._
   import VenueHoursWorker._
@@ -32,38 +33,33 @@ class VenueSearcher(val fsClient:FoursquareClient, val workerPool:ActorRef) exte
   private var venueHours = new VenueHoursMap
 
   def handleRunSearch: Receive = {
-    case RunSearch(ll) => {
+    case RunSearch(ll) =>
       okOrLogError(fsClient.venueSearch(ll)) { vs =>
         vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id) }
         context.system.scheduler.scheduleOnce(searcherTimeout(vs), self, VenueHoursTimedOut)
-        context.become(handleVenueHours(sender, vs))
+        context.become(handleVenueHours(sender(), vs))
       }
-    }
-
     case GotVenueHoursFor(vid, _) =>
       log.warning(s"Received outdated GotVenueHoursFor message for: $vid")
   }
 
   def handleVenueHours(recipient:ActorRef, vs:List[Venue]): Receive = {
     case rs:RunSearch =>
+      log.debug("stashing {}", rs)
       stash()
-    case VenueHoursTimedOut => {
-      log.warning("received VenueHoursTimedout!")
+    case VenueHoursTimedOut =>
+      log.warning("received VenueHoursTimedOut!")
       cleanupAndSendResponse(recipient, vs)
-    }
-
-    case GotVenueHoursFor(vid, oVh) => {
+    case GotVenueHoursFor(vid, oVh) =>
+      log.debug("Got venue for {}", vid)
       venueHours = venueHours + (vid -> oVh.getOrElse(VenueOpeningHours.empty))
-
-      if (venueHoursIsComplete(vs))
-        cleanupAndSendResponse(recipient, vs)
-    }
+      if (venueHoursIsComplete(vs)) cleanupAndSendResponse(recipient, vs)
   }
 
   def receive = handleRunSearch
 
   private def searcherTimeout(vs:List[Venue]):FiniteDuration =
-    (vs.size * Settings.venueHoursWorkerTimeout).seconds
+    (vs.size * Settings.venueHoursWorkerTimeout).millis
 
   private def addOpeningHours(vs:List[Venue]):List[VenueWithOpeningHours] =
     vs.map { v => v.withOpeningHours(venueHours.get(v.id)) }
@@ -75,6 +71,8 @@ class VenueSearcher(val fsClient:FoursquareClient, val workerPool:ActorRef) exte
     log.info(s"Got venues: ${vs.size}, venueHours: ${venueHours.size}")
     recipient ! GotVenuesWithOpeningHours(addOpeningHours(vs))
     venueHours = new VenueHoursMap
+    log.debug("Unstashing all...")
+    unstashAll()
     context.become(handleRunSearch)
   }
 }

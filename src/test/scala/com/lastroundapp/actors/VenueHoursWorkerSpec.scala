@@ -3,7 +3,7 @@ package com.lastroundapp.actors
 import scala.concurrent.duration._
 
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
-import akka.actor.{Props, ActorSystem}
+import akka.actor.ActorSystem
 
 import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
 
@@ -18,7 +18,7 @@ class VenueHoursWorkerSpec extends TestKit(ActorSystem("test-system", akkaConfig
   import VenueHoursWorker._
   import FoursquareTestClient._
 
-  override def afterAll {
+  override def afterAll() {
     shutdown()
   }
 

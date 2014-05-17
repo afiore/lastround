@@ -24,13 +24,13 @@ class FoursquareClientImpl(val log: LoggingAdapter) extends FoursquareClient
   override def venueSearch(ll:LatLon)(implicit ac:ActorContext, ec:ExecutionContext): VenueSearchResponse = {
     val fRes    = pipeline[VenueSearchResponse](Get(venueSearchUri(ll)))
     val timeout = Settings.venueSearcherTimeout
-    Await.result(fRes, timeout.seconds)
+    Await.result(fRes, timeout.millis)
   }
 
   override def venueHours(vid:VenueId)(implicit ac:ActorContext, ec:ExecutionContext): VenueHoursResponse = {
     val fVh     = pipeline[VenueHoursResponse](Get(venueHoursUri(vid)))
     val timeout = Settings.venueHoursWorkerTimeout
-    Await.result(fVh, timeout.seconds)
+    Await.result(fVh, timeout.millis)
   }
 
   private def venueHoursUri(vid:VenueId) =
