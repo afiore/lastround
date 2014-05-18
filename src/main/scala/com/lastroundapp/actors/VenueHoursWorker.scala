@@ -7,10 +7,11 @@ import com.lastroundapp.data._
 import com.lastroundapp.services.{FoursquareClient}
 
 import VenueHours.VenueOpeningHours
+import com.lastroundapp.data.Endpoints.AccessToken
 
 object VenueHoursWorker {
   type VenueHoursResponse = FoursquareResponse[VenueOpeningHours]
-  case class GetVenueHoursFor(vid:VenueId)
+  case class GetVenueHoursFor(vid:VenueId, token: AccessToken)
   case class GotVenueHoursFor(vid:VenueId, vhs:Option[VenueOpeningHours])
 }
 
@@ -22,8 +23,8 @@ class VenueHoursWorker(val fsClient: FoursquareClient) extends Actor
   import context.dispatcher
 
   def receive: Receive = {
-    case GetVenueHoursFor(vid) =>
-      okOrElse(fsClient.venueHours(vid))(vhs => sender ! GotVenueHoursFor(vid, Some(vhs))){ err =>
+    case GetVenueHoursFor(vid, token) =>
+      okOrElse(fsClient.venueHours(vid, token))(vhs => sender ! GotVenueHoursFor(vid, Some(vhs))){ err =>
         log.warning(s"a Foursquare API error occurred: {}", err)
         sender ! GotVenueHoursFor(vid, None)
       }

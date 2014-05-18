@@ -1,11 +1,12 @@
 package com.lastroundapp.services
 
-import com.lastroundapp.data.Endpoints.LatLon
+import com.lastroundapp.data.Endpoints.AccessToken
 import akka.actor.ActorContext
 import scala.concurrent.ExecutionContext
 import com.lastroundapp.data._
 import com.lastroundapp.data.Responses.{ResponseError, RateLimitExceeded, ResponseOK}
 import VenueHours._
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
 object FoursquareTestClient {
   val venue1         =
@@ -46,9 +47,9 @@ class FoursquareTestClient extends FoursquareClient {
   import VenueJSONProtocol._
   import VenueHoursJSONProtocol._
 
-  def venueSearch(ll:LatLon)(implicit ac:ActorContext, ec:ExecutionContext): VenueSearchResponse =
+  def venueSearch(q:VenueSearchQuery)(implicit ac:ActorContext, ec:ExecutionContext): VenueSearchResponse =
     ResponseOK(List(venue1, venue2))
 
-  def venueHours(vid:VenueId)(implicit ac:ActorContext, ec:ExecutionContext): VenueHoursResponse =
+  def venueHours(vid:VenueId, token:AccessToken)(implicit ac:ActorContext, ec:ExecutionContext): VenueHoursResponse =
     if (vid == vidSuccess) ResponseOK(venueHours1) else ResponseError(RateLimitExceeded("Take it easy..."))
  }

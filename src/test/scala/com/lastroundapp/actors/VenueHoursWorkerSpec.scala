@@ -8,6 +8,7 @@ import akka.actor.ActorSystem
 import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
 
 import com.lastroundapp.services.FoursquareTestClient
+import com.lastroundapp.data.Endpoints.AccessToken
 
 class VenueHoursWorkerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
                            with ImplicitSender
@@ -28,13 +29,13 @@ class VenueHoursWorkerSpec extends TestKit(ActorSystem("test-system", akkaConfig
   "VenueHoursWorker" should {
      "respond with a non-blank GotVenueHoursFor when client responds successfully" in  {
        within(1.second) {
-         worker ! GetVenueHoursFor(vidSuccess)
+         worker ! GetVenueHoursFor(vidSuccess, AccessToken.default)
          expectMsgType[GotVenueHoursFor] should be(GotVenueHoursFor(vidSuccess, Some(venueHours1)))
        }
      }
      "respond with a blank 'GotVenueHoursFor' when client responds with failure" in {
         within(1.second) {
-          worker ! GetVenueHoursFor(vidFailure)
+          worker ! GetVenueHoursFor(vidFailure, AccessToken.default)
           expectMsgType[GotVenueHoursFor] should be(GotVenueHoursFor(vidFailure, None))
         }
      }

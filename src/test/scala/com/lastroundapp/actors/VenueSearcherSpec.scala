@@ -8,9 +8,10 @@ import akka.actor.{Props, ActorSystem}
 import org.scalatest.{Pending, WordSpecLike, BeforeAndAfterAll, Matchers}
 import org.scalatest.mock.MockitoSugar
 import com.lastroundapp.services.FoursquareTestClient
-import com.lastroundapp.data.Endpoints.LatLon
+import com.lastroundapp.data.Endpoints.{AccessToken, LatLon}
 import com.lastroundapp.data.{VenueWithOpeningHours, VenueId}
 import com.lastroundapp.data.VenueHours.VenueOpeningHours
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
 class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
                                               with ImplicitSender
@@ -26,11 +27,11 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
   def this() = this(ActorSystem("test-system"))
 
   override def afterAll() {
-    println("pulling down actor system")
     TestKit.shutdownActorSystem(_system)
   }
 
   val ll                = mock[LatLon]
+  val q                 = VenueSearchQuery(ll, AccessToken.default)
   val vh1               = mock[VenueOpeningHours]
   val vh2               = mock[VenueOpeningHours]
   val venuesWithNoHours =
@@ -54,7 +55,7 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     }
     "return blank venue hours when worker requests time out" in {
       within(500.millis) {
-        newSearcher ! RunSearch(ll)
+        newSearcher ! RunSearch(q)
         expectMsg(venuesWithNoHours)
       }
     }
@@ -70,10 +71,10 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     "respond to a RunSearch message with GotVenueWithOpeningHours" in  {
       within(500.millis) {
         val workerPool = TestProbe()
-        newSearcher(workerPool) ! RunSearch(ll)
+        newSearcher(workerPool) ! RunSearch(q)
 
-        workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-1")))
-        workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-2")))
+        workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-1"), AccessToken.default))
+        workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-2"), AccessToken.default))
         workerPool.reply(GotVenueHoursFor(VenueId("venue-1"), Some(vh1)))
         workerPool.reply(GotVenueHoursFor(VenueId("venue-2"), Some(vh2)))
 

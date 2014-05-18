@@ -140,9 +140,9 @@ object Endpoints {
     }
   }
   sealed case class AuthenticatedEndpoint[E: EndpointUri](
-      endpoint:E,
+      endpoint: E,
       token: AccessToken,
       version: ApiVersion) {
-    def this(ep:E) = this(ep, AccessToken.default, ApiVersion.default)
+    def this(ep: E, token: AccessToken) = this(ep, token, ApiVersion.default)
   }
 }

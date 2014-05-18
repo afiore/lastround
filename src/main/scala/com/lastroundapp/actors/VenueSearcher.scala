@@ -11,12 +11,13 @@ import com.lastroundapp.data._
 
 import VenueHours.VenueOpeningHours
 import com.lastroundapp.services.FoursquareClient
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
 object VenueSearcher {
   type SearchResult  = FoursquareResponse[List[Venue]]
   type VenueHoursMap = scala.collection.immutable.HashMap[VenueId, VenueOpeningHours]
 
-  case class RunSearch(ll:LatLon)
+  case class RunSearch(q:VenueSearchQuery)
   case class GotVenuesWithOpeningHours(results: List[VenueWithOpeningHours])
   case object VenueHoursTimedOut
 }
@@ -33,9 +34,9 @@ class VenueSearcher(
   private var venueHours = new VenueHoursMap
 
   def handleRunSearch: Receive = {
-    case RunSearch(ll) =>
-      okOrLogError(fsClient.venueSearch(ll)) { vs =>
-        vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id) }
+    case RunSearch(q) =>
+      okOrLogError(fsClient.venueSearch(q)) { vs =>
+        vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id, q.token) }
         context.system.scheduler.scheduleOnce(searcherTimeout(vs), self, VenueHoursTimedOut)
         context.become(handleVenueHours(sender(), vs))
       }

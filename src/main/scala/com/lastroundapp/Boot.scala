@@ -6,10 +6,11 @@ import akka.routing.FromConfig
 import akka.io.IO
 import spray.can.Http
 
-import com.lastroundapp.data.Endpoints.LatLon
+import com.lastroundapp.data.Endpoints.{AccessToken, LatLon}
 import com.lastroundapp.services.FoursquareClientImpl
 import com.lastroundapp.actors.{VenueSearcher, VenueHoursWorker}
 import VenueSearcher.RunSearch
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
 
 object Boot extends App {
@@ -26,9 +27,10 @@ object Boot extends App {
   val workerPool    = system.actorOf(FromConfig.props(Props(classOf[VenueHoursWorker], fsClient)), "venue-hours-router")
   val venueSearcher = system.actorOf(Props(classOf[VenueSearcher], fsClient, workerPool), "venue-searcher")
 
+  // perform a search (just for fun)
+  val q = VenueSearchQuery(LatLon(51.545, -0.0553), AccessToken.default)
+  venueSearcher ! RunSearch(q)
+  venueSearcher ! RunSearch(q)
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ! Http.Bind(service, interface = "localhost", port = 8080)
-  // perform a search (just for fun)
-  venueSearcher ! RunSearch(LatLon(51.545, -0.0553))
-  venueSearcher ! RunSearch(LatLon(51.545, -0.0553))
 }
