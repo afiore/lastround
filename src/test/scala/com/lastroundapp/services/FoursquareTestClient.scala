@@ -1,10 +1,10 @@
 package com.lastroundapp.services
 
-import com.lastroundapp.data.Endpoints.AccessToken
+import com.lastroundapp.data.Endpoints.{LatLon, AccessToken}
 import akka.actor.ActorContext
 import scala.concurrent.ExecutionContext
 import com.lastroundapp.data._
-import com.lastroundapp.data.Responses.{ResponseError, RateLimitExceeded, ResponseOK}
+import com.lastroundapp.data.Responses.{ResponseError,NotAuthorised,RateLimitExceeded, ResponseOK}
 import VenueHours._
 import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
@@ -30,9 +30,13 @@ object FoursquareTestClient {
       None)
 
   val vidFailure = VenueId("failing-venue")
-  val vidSuccess     = VenueId("success-venue")
+  val vidSuccess = VenueId("success-venue")
 
-  val venueHours1    =
+  val ll = LatLon(45.0, 50.0)
+  val venueSearchQuerySuccess = VenueSearchQuery(ll, AccessToken.default)
+  val venueSearchQueryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"))
+
+  val venueHours1 =
     VenueOpeningHours(
       List(),
       List(
@@ -48,7 +52,7 @@ class FoursquareTestClient extends FoursquareClient {
   import VenueHoursJSONProtocol._
 
   def venueSearch(q:VenueSearchQuery)(implicit ac:ActorContext, ec:ExecutionContext): VenueSearchResponse =
-    ResponseOK(List(venue1, venue2))
+    if (q == venueSearchQuerySuccess) ResponseOK(List(venue1, venue2)) else ResponseError(NotAuthorised("bad token"))
 
   def venueHours(vid:VenueId, token:AccessToken)(implicit ac:ActorContext, ec:ExecutionContext): VenueHoursResponse =
     if (vid == vidSuccess) ResponseOK(venueHours1) else ResponseError(RateLimitExceeded("Take it easy..."))

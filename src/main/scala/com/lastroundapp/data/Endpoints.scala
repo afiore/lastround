@@ -4,8 +4,6 @@ import spray.http._
 import spray.http.Uri._
 import scala.language.implicitConversions
 
-import com.lastroundapp.Settings
-
 object Endpoints {
   import VenueConversions._
 
@@ -21,8 +19,8 @@ object Endpoints {
   trait EndpointUri[A] {
     val host = Settings.foursquareHost
     def path(a:A): Path
-    def params(a:A): Set[Param]      = Set[Param]()
-    def toUri(a: A): Uri             = host.withPath(path(a)).withQuery(params(a).toMap)
+    def params(a:A): Set[Param] = Set[Param]()
+    def toUri(a: A): Uri = host.withPath(path(a)).withQuery(params(a).toMap)
   }
   def toUri[A](a: A)(implicit ev:EndpointUri[A])       = ev.toUri(a)
   def toUriStirng[A](a: A)(implicit ev:EndpointUri[A]) = ev.toUri(a).toString()
@@ -77,7 +75,6 @@ object Endpoints {
     def paramValue(radius:Radius) = radius.r.toString
   }
 
-
   sealed abstract class Endpoint
 
   // VenueSearchEndpoint
@@ -129,6 +126,39 @@ object Endpoints {
   }
   case class AccessToken(token: String) extends AnyVal
 
+
+  // OAuth authentication endpoints
+
+  val fsHost = "https://foursquare.com"
+
+
+  val oauthParams =
+    Set(
+      "client_id"     -> Settings.foursquareClientId,
+      "client_secret" -> Settings.foursquareSecret,
+      "redirect_uri"  -> Settings.foursquareRedirectUrl,
+      "grant_type"    -> "authorization_code"
+    )
+
+  object AuthEndpoint {
+    implicit object AuthEndpointUri extends EndpointUri[AuthEndpoint] {
+      override val host = fsHost
+      def path(ep:AuthEndpoint) = Path("/oauth2/authenticate")
+      override def params(ep:AuthEndpoint) = oauthParams ++ Set("response_type" -> "code")
+    }
+  }
+  case class AuthEndpoint()
+
+  object TokenEndpoint {
+    implicit object TokenEndpointUri extends EndpointUri[TokenEndpoint] {
+      override val host = fsHost
+      def path(ep:TokenEndpoint) = Path("/oauth2/access_token")
+      override def params(ep:TokenEndpoint) = oauthParams ++ Set("code" -> ep.code)
+    }
+  }
+  sealed case class TokenEndpoint(code:String)
+
+  //Wrapper typeclass allowing to add token and api version to each endpoint
   object AuthenticatedEndpoint {
     implicit def aep2EndpointUri[E: EndpointUri] = new EndpointUri[AuthenticatedEndpoint[E]] {
       def path(aep:AuthenticatedEndpoint[E]) =

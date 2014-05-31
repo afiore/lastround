@@ -8,12 +8,11 @@ import scala.concurrent.duration._
 
 import spray.client.pipelining.Get
 import spray.http.Uri
-
-import com.lastroundapp.Settings
 import com.lastroundapp.data.Endpoints._
 import com.lastroundapp.data._
 import com.lastroundapp.data.Responses.FSResponseJsonProtocol
 import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import com.lastroundapp.data.VenueId
 
 class FoursquareClientImpl(val log: LoggingAdapter) extends FoursquareClient
                                                     with LoggablePipeline {

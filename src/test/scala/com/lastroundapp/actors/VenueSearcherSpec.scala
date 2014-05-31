@@ -30,16 +30,14 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     TestKit.shutdownActorSystem(_system)
   }
 
-  val ll                = mock[LatLon]
-  val q                 = VenueSearchQuery(ll, AccessToken.default)
+  val fsClient          = new FoursquareTestClient()
   val vh1               = mock[VenueOpeningHours]
   val vh2               = mock[VenueOpeningHours]
   val venuesWithNoHours =
-    GotVenuesWithOpeningHours(List(
+    GotVenuesWithOpeningHours(Right(List(
       VenueWithOpeningHours(venue1, None),
-      VenueWithOpeningHours(venue2, None)))
+      VenueWithOpeningHours(venue2, None))))
 
-  val fsClient            = new FoursquareTestClient()
   implicit val workerPool = TestProbe()
 
   def newSearcher(implicit workerPool: TestProbe) = {
@@ -55,32 +53,40 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     }
     "return blank venue hours when worker requests time out" in {
       within(500.millis) {
-        newSearcher ! RunSearch(q)
+        newSearcher ! RunSearch(venueSearchQuerySuccess)
         expectMsg(venuesWithNoHours)
       }
     }
+    "return a left value when Foursquare API responds with a failure" in {
+      within(500.millis) {
+        newSearcher ! RunSearch(venueSearchQueryFailure)
+        expectMsg(GotVenuesWithOpeningHours(Left("bad token")))
+      }
+    }
     "stash incoming RunSearch while handing GotVenueWithOpeningHours" in {
-      //within(2.seconds) {
-      //  val searcher = newSearcher
-      //  searcher ! RunSearch(ll)
-      //  searcher ! RunSearch(ll)
-      //  expectMsgAllOf(venuesWithNoHours, venuesWithNoHours)
-      //}
+      /*
+      within(2.seconds) {
+        val searcher = newSearcher
+        searcher ! RunSearch(venueSearchQuerySuccess)
+        searcher ! RunSearch(venueSearchQuerySuccess)
+        expectMsgAllOf(venuesWithNoHours, venuesWithNoHours)
+      }
+      */
       pending
     }
     "respond to a RunSearch message with GotVenueWithOpeningHours" in  {
       within(500.millis) {
         val workerPool = TestProbe()
-        newSearcher(workerPool) ! RunSearch(q)
+        newSearcher(workerPool) ! RunSearch(venueSearchQuerySuccess)
 
         workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-1"), AccessToken.default))
         workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-2"), AccessToken.default))
         workerPool.reply(GotVenueHoursFor(VenueId("venue-1"), Some(vh1)))
         workerPool.reply(GotVenueHoursFor(VenueId("venue-2"), Some(vh2)))
 
-        expectMsg(GotVenuesWithOpeningHours(
+        expectMsg(GotVenuesWithOpeningHours(Right(
           List(VenueWithOpeningHours(venue1, Some(vh1)),
-               VenueWithOpeningHours(venue2, Some(vh2)))))
+               VenueWithOpeningHours(venue2, Some(vh2))))))
       }
     }
   }

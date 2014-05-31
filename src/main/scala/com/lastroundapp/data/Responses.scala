@@ -6,28 +6,23 @@ import spray.json._
 import spray.httpx.SprayJsonSupport
 
 object Responses {
-  sealed trait ApiError
-  case class InvalidAuth(msg:String)      extends ApiError
-  case class ParamError(msg:String)       extends ApiError
-  case class EndpointError(msg:String)    extends ApiError
-  case class NotAuthorised(msg:String)    extends ApiError
-  case class RateLimitExceeded(msg:String) extends ApiError
-  case class Deprecated(msg:String)       extends ApiError
-  case class ServerError(msg:String)      extends ApiError
-  case class OtherError(msg:String)       extends ApiError
+  sealed trait ApiError {
+    val message: String
+  }
+  case class InvalidAuth(message:String)      extends ApiError
+  case class ParamError(message:String)       extends ApiError
+  case class EndpointError(message:String)    extends ApiError
+  case class NotAuthorised(message:String)    extends ApiError
+  case class RateLimitExceeded(message:String) extends ApiError
+  case class Deprecated(message:String)       extends ApiError
+  case class ServerError(message:String)      extends ApiError
+  case class OtherError(message:String)       extends ApiError
 
   sealed trait FoursquareResponse[T]
   case class ResponseOK[T: JsonFormat](results: T) extends FoursquareResponse[T]
   case class ResponseError[Nothing](err: ApiError) extends FoursquareResponse[Nothing]
 
   trait ResponseHandler {
-    //val log:LoggingAdapter
-
-    def okOrLogError[T](resp: FoursquareResponse[T])(onOk: T => Unit) =
-      okOrElse(resp)(onOk) { apiErr =>
-        //log.error(s"a Foursquare API error has occurred: $apiErr")
-      }
-
     def okOrElse[T](resp: FoursquareResponse[T])(onOk: T => Unit)(onError: ApiError => Unit): Unit = resp match {
       case ResponseOK(result) => onOk(result)
       case ResponseError(err) => onError(err)
