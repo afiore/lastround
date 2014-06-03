@@ -36,9 +36,8 @@ object VenueConversions {
 }
 
 object VenueJSONProtocol extends DefaultJsonProtocol {
-
   implicit object VenueIdFormat extends JsonFormat[VenueId] {
-    def write(vId:VenueId):JsValue = ???
+    def write(vId:VenueId):JsValue = JsString(vId.id)
     def read(v:JsValue):VenueId = v match {
       case JsString(id) =>
         VenueId(id)
@@ -46,9 +45,9 @@ object VenueJSONProtocol extends DefaultJsonProtocol {
         throw new DeserializationException("VenueId expected")
     }
   }
-
   implicit object VenueListFormat extends JsonFormat[List[Venue]] {
-    def write(vs:List[Venue]):JsValue = ???
+    def write(vs:List[Venue]):JsValue =
+      JsArray(vs.map(_.toJson))
     def read(v:JsValue): List[Venue]  = v.asJsObject.getFields("venues") match {
       case Seq(JsArray(vs)) =>
         vs.map(_.convertTo[Venue])

@@ -17,6 +17,16 @@ object VenueHours {
   object Friday    extends WeekDay
   object Saturday  extends WeekDay
 
+  implicit def weekdDay2Int(d:WeekDay):Int = d match {
+    case Monday    => 1
+    case Tuesday   => 2
+    case Wednesday => 3
+    case Thursday  => 4
+    case Friday    => 5
+    case Saturday  => 6
+    case Sunday    => 7
+  }
+
   implicit def int2WeekDay(n:Int):WeekDay = n match {
     case 1 => Monday
     case 2 => Tuesday
@@ -35,13 +45,12 @@ object VenueHours {
       }
   }
 
-  sealed case class TimeOfDay(hours:Int, minutes:Int) {
-    require(hours >= 0 && hours < 24,     "hours must be within 0 and 23")
-    require(minutes >= 0 && minutes < 60, "minutes must be within 0 and 59")
-  }
-
   object TimeOfDay {
-    def fromString(rawS:String):TimeOfDay = {
+    implicit def tod2String(tod:TimeOfDay): String =
+       "%02d".format(tod.hours) ++
+       "%02d".format(tod.minutes)
+
+    implicit def string2tod(rawS:String):TimeOfDay = {
       val s = rawS.filter(_.isDigit)
 
       if (s.length == 4 && s.forall(_.isDigit)) {
@@ -53,6 +62,10 @@ object VenueHours {
           s"must be a string of 4 digits, got $s instead")
       }
     }
+  }
+  sealed case class TimeOfDay(hours:Int, minutes:Int) {
+    require(hours >= 0 && hours < 24,     "hours must be within 0 and 23")
+    require(minutes >= 0 && minutes < 60, "minutes must be within 0 and 59")
   }
 
   sealed case class OpeningTime(start:TimeOfDay, end:TimeOfDay)
@@ -70,24 +83,28 @@ object VenueHours {
 
   object VenueHoursJSONProtocol extends DefaultJsonProtocol {
 
+    import VenueJSONProtocol._
+
     implicit object WeekDay2Json extends JsonFormat[WeekDay] {
-      def write(d:WeekDay):JsValue = ???
+      def write(d:WeekDay):JsValue =
+        JsNumber(d)
       def read(v:JsValue):WeekDay = v match {
         case JsNumber(n) if n.toInt > 0 && n.toInt <= 7 =>
-          int2WeekDay(n.toInt)
+          n.toInt
         case _ =>
-          throw new DeserializationException(
-            "WeekDay2Json: Number between 1 and 7 expected")
+          throw new DeserializationException("WeekDay2Json: Number between 1 and 7 expected")
       }
     }
 
     implicit object OpeningTime2Json extends JsonFormat[OpeningTime] {
-      def write(tod:OpeningTime):JsValue = ???
+      def write(ot:OpeningTime):JsValue = JsObject(
+        "start" -> JsString(ot.start),
+        "end"   -> JsString(ot.end)
+      )
+
       def read(v:JsValue) = v.asJsObject.getFields("start", "end") match {
         case Seq(JsString(start), JsString(end)) =>
-          OpeningTime(
-            TimeOfDay.fromString(start),
-            TimeOfDay.fromString(end))
+          OpeningTime(start,end)
         case _ =>
           throw new DeserializationException(
             "OpeningTime2Json: Cannot parse start/end attributes")
@@ -95,7 +112,10 @@ object VenueHours {
     }
 
     implicit object TimeFrame2Json extends JsonFormat[TimeFrame] {
-      def write(tf:TimeFrame):JsValue = ???
+      def write(tf:TimeFrame):JsValue = JsObject(
+        "days" -> JsArray(tf.days.toList.map(_.toJson)),
+        "open" -> JsArray(tf.open.map(_.toJson))
+      )
       def read(v:JsValue) = v.asJsObject.getFields("days", "open") match {
         case Seq(JsArray(days), JsArray(open)) =>
           TimeFrame(
@@ -108,7 +128,8 @@ object VenueHours {
     }
 
     implicit object TimeFrameList2Json extends JsonFormat[List[TimeFrame]] {
-      def write(tf:List[TimeFrame]):JsValue = ???
+      def write(tf:List[TimeFrame]):JsValue =
+        JsArray(tf.map(_.toJson))
       def read(v:JsValue) = v.asJsObject.getFields("timeframes") match {
         case Seq(JsArray(timeframes)) =>
           timeframes.map(_.convertTo[TimeFrame])
@@ -117,18 +138,32 @@ object VenueHours {
     }
 
     implicit object VenueOpeningHours2Json extends JsonFormat[VenueOpeningHours] {
-      def write(voh:VenueOpeningHours):JsValue = ???
+      def write(voh:VenueOpeningHours):JsValue = JsObject(
+        "hours"   -> JsArray(voh.hours.map(_.toJson)),
+        "popular" -> JsArray(voh.popular.map(_.toJson))
+      )
       def read(v:JsValue):VenueOpeningHours = v.asJsObject.getFields("hours", "popular") match {
         case Seq(hours:JsObject, popular:JsObject) =>
           VenueOpeningHours(
             hours.convertTo[List[TimeFrame]],
             popular.convertTo[List[TimeFrame]])
-
           case _ =>
             throw new DeserializationException(
               "VenueOpeningHours2Json: Cannot find both 'hours' and 'popular' attributes")
       }
     }
-  }
 
+    implicit object VenueWithOpeningHours2Json extends JsonFormat[VenueWithOpeningHours] {
+      def write(vh:VenueWithOpeningHours):JsValue = JsObject(
+        "venue" -> vh.venue.toJson,
+        "hours" -> vh.openingHours.toJson
+      )
+      def read(v:JsValue):VenueWithOpeningHours = ???
+    }
+
+    implicit object VenueWithOpeningHoursList2Json extends JsonFormat[List[VenueWithOpeningHours]] {
+      def write(vhs:List[VenueWithOpeningHours]): JsValue = JsArray(vhs.map(_.toJson))
+      def read(v:JsValue):List[VenueWithOpeningHours] = ???
+    }
+  }
 }

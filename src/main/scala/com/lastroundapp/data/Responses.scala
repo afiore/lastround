@@ -33,7 +33,10 @@ object Responses {
                                 with SprayJsonSupport {
 
     implicit def FsResp2Json[T: JsonFormat] = new RootJsonFormat[FoursquareResponse[T]] {
-      def write(resp:FoursquareResponse[T]):JsValue = ???
+      def write(resp:FoursquareResponse[T]):JsValue = resp match {
+        case ResponseOK(value)  => JsObject("result" -> value.toJson)
+        case ResponseError(err) => JsObject("error"  -> JsString(err.message))
+      }
 
       def read(v:JsValue):FoursquareResponse[T] = {
         v.asJsObject.getFields("meta", "response") match {
