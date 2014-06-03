@@ -1,22 +1,25 @@
 package com.lastroundapp.services
 
-import akka.actor.{ActorContext, Actor, ActorRef}
+import akka.actor.{Props, ActorContext, Actor, ActorRef}
 import akka.event.Logging
 
-import com.lastroundapp.actors.VenueSearcher
+import com.lastroundapp.actors.{ResultStreamer, VenueSearcher}
 import com.lastroundapp.auth.FoursquareOAuth
 import com.lastroundapp.data.{FSToken, Endpoints}
+
+import java.util.UUID
 
 import spray.http.StatusCodes.{TemporaryRedirect, BadRequest}
 import spray.routing.HttpService
 
 import Endpoints._
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
 class LastRoundActor (val venueSearcher:ActorRef) extends Actor with LastRoundService {
-  val actorRefFactory = context
-  val log             = Logging.getLogger(context.system, "FoursquareOAuth")
-  val oauth           = new FoursquareOAuth(log)
-  def receive: Receive = runRoute(myRoute)
+  val actorRefFactory  = context
+  val log              = Logging.getLogger(context.system, "FoursquareOAuth")
+  val oauth            = new FoursquareOAuth(log)
+  def receive: Receive = runRoute(route)
 }
 
 trait LastRoundService extends HttpService {
@@ -26,7 +29,19 @@ trait LastRoundService extends HttpService {
 
   implicit val ec = context.dispatcher
 
-  val myRoute =
+  val route =
+    path("search" / "open-venues") {
+      get {
+        parameters('ll.as[LatLon], 'token.as[AccessToken]) { (latLon, token) => request =>
+          actorRefFactory.actorOf(Props(
+            classOf[ResultStreamer],
+            VenueSearchQuery(latLon, token),
+            venueSearcher,
+            request.responder),
+            s"result-streamer-${UUID.randomUUID()}")
+        }
+      }
+    } ~
     path("signin") {
       redirect(toUri(new AuthEndpoint), TemporaryRedirect)
     } ~
@@ -34,13 +49,11 @@ trait LastRoundService extends HttpService {
       get {
         parameter('code) { code =>
           detach() {
-            onSuccess(oauth.getAccessToken(code)(context, ec)) { token =>
-              token match {
-                case Some(FSToken(t)) =>
-                  complete(s"Got $t")
-                case None =>
-                  complete(BadRequest)
-              }
+            onSuccess(oauth.getAccessToken(code)(context, ec)) {
+              case Some(FSToken(t)) =>
+                complete(s"Got $t")
+              case None =>
+                complete(BadRequest)
             }
           }
         }

@@ -4,14 +4,12 @@ import scala.concurrent.duration._
 
 import akka.actor._
 import akka.routing.FromConfig
-import com.lastroundapp.data.Endpoints._
 import com.lastroundapp.data.Responses._
 import com.lastroundapp.data._
 
 import VenueHours.VenueOpeningHours
 import com.lastroundapp.services.FoursquareClient
 import FoursquareClient.VenueSearchQuery
-
 
 object VenueSearcher {
   def buildPool(fsClient:FoursquareClient)(implicit system:ActorSystem): ActorRef = {

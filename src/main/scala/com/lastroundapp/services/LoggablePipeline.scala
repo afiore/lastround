@@ -7,11 +7,12 @@ import scala.concurrent.{Future, ExecutionContext}
 
 import spray.http.{HttpRequest, HttpResponse, HttpHeaders, MediaTypes}
 import spray.httpx.encoding.{Gzip, Deflate}
-import spray.httpx.unmarshalling.FromResponseUnmarshaller
+import spray.httpx.unmarshalling._
 
 import spray.client.pipelining._
 import HttpHeaders._
 import MediaTypes._
+import spray.client.PipelineException
 
 trait LoggablePipeline {
   import spray.httpx.RequestBuilding._
@@ -19,7 +20,7 @@ trait LoggablePipeline {
   val log: LoggingAdapter
 
   def pipeline[T: FromResponseUnmarshaller](req:HttpRequest)(
-      implicit ac:ActorContext, ec:ExecutionContext): Future[T] = {
+    implicit ac:ActorContext, ec:ExecutionContext): Future[T] = {
 
     val pipe =
       (encode(Gzip)
@@ -28,10 +29,18 @@ trait LoggablePipeline {
         ~> sendReceive
         ~> decode(Deflate)
         ~> logResponse
-        ~> unmarshal[T])
+        ~> _unmarshal )
 
     pipe(req)
   }
+
+  private def _unmarshal[T: FromResponseUnmarshaller]: HttpResponse => T =
+    r => r.as[T] match {
+      case Right(value) =>
+        value
+      case _ =>
+        throw new PipelineException("Cannot parse response")
+    }
 
   private val logRequest: HttpRequest => HttpRequest =
     { r => log.debug(s"Issuing request:{}", r); r }

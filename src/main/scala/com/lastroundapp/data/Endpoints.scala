@@ -1,8 +1,11 @@
 package com.lastroundapp.data
 
+import scala.util.{Try, Success, Failure}
 import spray.http._
 import spray.http.Uri._
 import scala.language.implicitConversions
+import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
+import scala.util.Try
 
 object Endpoints {
   import VenueConversions._
@@ -26,6 +29,15 @@ object Endpoints {
   def toUriStirng[A](a: A)(implicit ev:EndpointUri[A]) = ev.toUri(a).toString()
 
   object LatLon {
+    implicit val string2LatLon = new FromStringDeserializer[LatLon] {
+      def apply(s: String) = {
+        val tryLatLon = s.split(',').map { (s:String) => Try(s.toDouble) }
+        tryLatLon match {
+          case Array(Success(lat:Double), Success(lon:Double)) => Right(LatLon(lat, lon))
+          case _ => Left(MalformedContent(s"Cannot parse string $s as a LatLon"))
+        }
+      }
+    }
     implicit object LatLonToParam extends ToParam[LatLon] {
       val paramName              = "ll"
       def paramValue(ll: LatLon) =
@@ -51,7 +63,7 @@ object Endpoints {
   object Global  extends Intent
   object Match   extends Intent
 
-  sealed case class Category(val id:String)
+  sealed case class Category(id: String)
   object Category {
     val Bar        = apply("4bf58dd8d48988d116941735")
     val NightClub  = apply("4bf58dd8d48988d11f941735")
@@ -64,11 +76,10 @@ object Endpoints {
     def paramValue(cats:Set[Category]) = cats.map(_.id).mkString(",")
   }
 
-
   object Radius {
     val default = 2000
   }
-  sealed case class Radius(val r:Int)
+  sealed case class Radius(r:Int)
 
   implicit object RadiusToParam extends ToParam[Radius] {
     val paramName                 = "radius"
@@ -118,6 +129,10 @@ object Endpoints {
   case class ApiVersion(version: Int) extends AnyVal
 
   object AccessToken {
+    implicit val string2AccessToken = new FromStringDeserializer[AccessToken] {
+      def apply(s: String) =
+        if (s.isEmpty) Left(MalformedContent("Blank token")) else Right(AccessToken(s))
+    }
     implicit object AccessToken2Param extends ToParam[AccessToken] {
       val paramName = "oauth_token"
       def paramValue(t:AccessToken) = t.token
@@ -126,12 +141,8 @@ object Endpoints {
   }
   case class AccessToken(token: String) extends AnyVal
 
-
   // OAuth authentication endpoints
-
   val fsHost = "https://foursquare.com"
-
-
   val oauthParams =
     Set(
       "client_id"     -> Settings.foursquareClientId,
