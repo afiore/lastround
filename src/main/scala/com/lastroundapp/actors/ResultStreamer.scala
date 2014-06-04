@@ -21,14 +21,31 @@ class ResultStreamer(
   import com.lastroundapp.data.VenueHours.VenueHoursJSONProtocol._
 
   private case object ResponderTimedOut
+  sealed case class ServerSentEvent[T: JsonFormat](evType:String, data:T) {
+    def serialize:String = {
+      s"""event: $evType
+        |data: ${data.toJson.compactPrint}
+        |
+      """.stripMargin
+    }
+  }
 
-  private val header = (1 to 1024).map(_ => "\uFEFF").mkString("")
+  val EventStreamType = register(
+    MediaType.custom(
+      mainType = "text",
+      subType  = "stream",
+      compressible = true,
+      binary = false,
+      fileExtensions = Seq()
+    ))
+
+  //private val header = (1 to 1024).map(_ => "\uFEFF").mkString("")
 
   implicit val ec = context.dispatcher
 
   venueSearcher ! RunSearch(q)
 
-  responder ! ChunkedResponseStart(HttpResponse(entity = HttpEntity(ContentType(`text/plain`, HttpCharsets.`UTF-8`), header)))
+  responder ! ChunkedResponseStart(HttpResponse(entity = HttpEntity(EventStreamType, "\n\n")))
   context.system.scheduler.scheduleOnce(30.seconds, self, ResponderTimedOut)
 
   def receive = {
@@ -37,7 +54,7 @@ class ResultStreamer(
       context.stop(self)
 
     case GotVenuesWithOpeningHours(Right(vh)) =>
-      responder ! MessageChunk(vh.toJson.compactPrint)
+      responder ! MessageChunk(ServerSentEvent("result", vh).serialize)
       responder ! ChunkedMessageEnd
       context.stop(self)
 

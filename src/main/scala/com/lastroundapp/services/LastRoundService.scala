@@ -14,9 +14,10 @@ import spray.routing.HttpService
 
 import Endpoints._
 import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import spray.httpx.encoding.Gzip
 
 class LastRoundActor (val venueSearcher:ActorRef) extends Actor with LastRoundService {
-  val actorRefFactory  = context
+  def actorRefFactory  = context
   val log              = Logging.getLogger(context.system, "FoursquareOAuth")
   val oauth            = new FoursquareOAuth(log)
   def receive: Receive = runRoute(route)
@@ -58,5 +59,8 @@ trait LastRoundService extends HttpService {
           }
         }
       }
+    } ~
+    pathPrefix("filez") {
+      getFromResourceDirectory("static")
     }
 }
