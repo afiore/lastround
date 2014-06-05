@@ -3,15 +3,18 @@ package com.lastroundapp.actors
 import scala.concurrent.duration._
 
 import akka.testkit.{TestProbe, ImplicitSender, TestActorRef, TestKit}
-import akka.actor.{Props, ActorSystem}
+import akka.actor.ActorSystem
 
-import org.scalatest.{Pending, WordSpecLike, BeforeAndAfterAll, Matchers}
+import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
 import org.scalatest.mock.MockitoSugar
 import com.lastroundapp.services.FoursquareTestClient
-import com.lastroundapp.data.Endpoints.{AccessToken, LatLon}
-import com.lastroundapp.data.{VenueWithOpeningHours, VenueId}
-import com.lastroundapp.data.VenueHours.VenueOpeningHours
-import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import com.lastroundapp.data.Endpoints.AccessToken
+import com.lastroundapp.data.VenueHours._
+import com.lastroundapp.data.Responses.NotAuthorised
+import com.lastroundapp.data.VenueHours.OpeningTime
+import com.lastroundapp.data.VenueHours.TimeFrame
+import scala.Some
+import com.lastroundapp.data.VenueId
 
 class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
                                               with ImplicitSender
@@ -30,13 +33,18 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     TestKit.shutdownActorSystem(_system)
   }
 
-  val fsClient          = new FoursquareTestClient()
-  val vh1               = mock[VenueOpeningHours]
-  val vh2               = mock[VenueOpeningHours]
-  val venuesWithNoHours =
-    GotVenuesWithOpeningHours(Right(List(
-      VenueWithOpeningHours(venue1, None),
-      VenueWithOpeningHours(venue2, None))))
+  val fsClient  = new FoursquareTestClient()
+  val vh1       = VenueOpeningHours.empty
+  val vh2       = VenueOpeningHours(
+    List.empty,
+    List(
+      TimeFrame(Set(Monday),
+      List(
+        OpeningTime(
+          TimeOfDay(22, 0),
+          TimeOfDay(6, 0))))))
+
+  val gotVenues = GotVenueResults(Right(List(venue1, venue2)))
 
   implicit val workerPool = TestProbe()
 
@@ -54,13 +62,14 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     "return blank venue hours when worker requests time out" in {
       within(500.millis) {
         newSearcher ! RunSearch(venueSearchQuerySuccess)
-        expectMsg(venuesWithNoHours)
+        expectMsg(gotVenues)
+        expectMsg(EndOfVenueHours)
       }
     }
     "return a left value when Foursquare API responds with a failure" in {
       within(500.millis) {
         newSearcher ! RunSearch(venueSearchQueryFailure)
-        expectMsg(GotVenuesWithOpeningHours(Left("bad token")))
+        expectMsg(GotVenueResults(Left(NotAuthorised("bad token"))))
       }
     }
     "stash incoming RunSearch while handing GotVenueWithOpeningHours" in {
@@ -77,16 +86,20 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
     "respond to a RunSearch message with GotVenueWithOpeningHours" in  {
       within(500.millis) {
         val workerPool = TestProbe()
+        val gotVh1     = GotVenueHoursFor(VenueId("venue-1"), Some(vh1))
+        val gotVh2     = GotVenueHoursFor(VenueId("venue-2"), Some(vh2))
+
         newSearcher(workerPool) ! RunSearch(venueSearchQuerySuccess)
 
         workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-1"), AccessToken.default))
         workerPool.expectMsg(200.millis, GetVenueHoursFor(VenueId("venue-2"), AccessToken.default))
-        workerPool.reply(GotVenueHoursFor(VenueId("venue-1"), Some(vh1)))
-        workerPool.reply(GotVenueHoursFor(VenueId("venue-2"), Some(vh2)))
 
-        expectMsg(GotVenuesWithOpeningHours(Right(
-          List(VenueWithOpeningHours(venue1, Some(vh1)),
-               VenueWithOpeningHours(venue2, Some(vh2))))))
+        workerPool.reply(gotVh1)
+        workerPool.reply(gotVh2)
+
+        expectMsg(gotVenues)
+        expectMsg(gotVh2) //blank venue hours are supposed to be filtered out
+        expectMsg(EndOfVenueHours)
       }
     }
   }

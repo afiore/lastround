@@ -22,11 +22,11 @@ object VenueSearcher {
       "venue-search-router")
   }
 
-  type SearchResult  = FoursquareResponse[List[Venue]]
-  type VenueHoursMap = scala.collection.immutable.HashMap[VenueId, VenueOpeningHours]
+  type SearchResult = FoursquareResponse[List[Venue]]
 
   case class RunSearch(q:VenueSearchQuery)
-  case class GotVenuesWithOpeningHours(eResult:Either[String,List[VenueWithOpeningHours]])
+  case class GotVenueResults(eResult:Either[ApiError,List[Venue]])
+  case object EndOfVenueHours
   case object VenueHoursTimedOut
 }
 
@@ -40,51 +40,57 @@ class VenueSearcher(
     import VenueSearcher._
     import VenueHoursWorker._
 
-    private var venueHours = new VenueHoursMap
-
     def handleRunSearch: Receive = {
     case RunSearch(q) =>
       okOrElse(fsClient.venueSearch(q)) { vs:List[Venue] =>
         vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id, q.token) }
+        sender ! GotVenueResults(Right(vs))
+
         context.system.scheduler.scheduleOnce(searcherTimeout(vs), self, VenueHoursTimedOut)
-        context.become(handleVenueHours(sender(), vs))
+        context.become(handleVenueHours(sender(), vs.map(_.id).toSet))
       } { err =>
-        sender ! GotVenuesWithOpeningHours(Left(err.message))
+        sender ! GotVenueResults(Left(err))
       }
+
     case GotVenueHoursFor(vid, _) =>
       log.warning(s"Received outdated GotVenueHoursFor message for: $vid")
     }
 
-    def handleVenueHours(recipient:ActorRef, vs:List[Venue]): Receive = {
-    case rs:RunSearch =>
-      log.debug("stashing {}", rs)
-      stash()
-    case VenueHoursTimedOut =>
-      log.warning("received VenueHoursTimedOut!")
-      cleanupAndSendResponse(recipient, vs)
-    case GotVenueHoursFor(vid, oVh) =>
-      log.debug("Got venue for {}", vid)
-      venueHours = venueHours + (vid -> oVh.getOrElse(VenueOpeningHours.empty))
-      if (venueHoursIsComplete(vs)) cleanupAndSendResponse(recipient, vs)
+    def handleVenueHours(recipient:ActorRef, vIds:Set[VenueId]): Receive = {
+      case rs:RunSearch =>
+        log.debug("stashing {}", rs)
+        stash()
+
+      case VenueHoursTimedOut =>
+        log.warning("received VenueHoursTimedOut!")
+        respondAndReset(recipient)
+
+      case msg@GotVenueHoursFor(vId, _) =>
+        val _vIds = vIds - vId
+        sendVenueHoursUnlessEmpty(recipient, msg)
+
+        if (_vIds.isEmpty)
+          respondAndReset(recipient)
+        else
+          context.become(handleVenueHours(recipient, _vIds))
     }
 
     def receive = handleRunSearch
 
-    private def searcherTimeout(vs:List[Venue]):FiniteDuration =
-    (vs.size * Settings.venueHoursWorkerTimeout).millis
+    private def searcherTimeout(vs:List[_]):FiniteDuration =
+      (vs.size * Settings.venueHoursWorkerTimeout).millis
 
-    private def addOpeningHours(vs:List[Venue]):List[VenueWithOpeningHours] =
-    vs.map { v => v.withOpeningHours(venueHours.get(v.id)) }
+    private def sendVenueHoursUnlessEmpty(recipient: ActorRef, msg: GotVenueHoursFor): Unit = {
+      log.debug("Got venue for {}", msg.vid)
+      msg.vhs match {
+        case Some(vhs) if vhs.isNotEmpty => recipient ! msg
+        case _ =>
+      }
+    }
 
-    private def venueHoursIsComplete(vs:List[Venue]):Boolean =
-    venueHours.keys == vs.map(_.id).toSet
-
-    private def cleanupAndSendResponse(recipient: ActorRef, vs:List[Venue]) = {
-    log.info(s"Got venues: ${vs.size}, venueHours: ${venueHours.size}")
-    recipient ! GotVenuesWithOpeningHours(Right(addOpeningHours(vs)))
-    venueHours = new VenueHoursMap
-    log.debug("Unstashing all...")
-    unstashAll()
-    context.become(handleRunSearch)
-  }
+    private def respondAndReset(recipient: ActorRef) = {
+      recipient ! EndOfVenueHours
+      unstashAll()
+      context.become(handleRunSearch)
+    }
 }

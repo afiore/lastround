@@ -8,8 +8,6 @@ import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
 import scala.util.Try
 
 object Endpoints {
-  import VenueConversions._
-
   type Param = (String, String)
 
   trait ToParam[A] {

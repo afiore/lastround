@@ -24,7 +24,9 @@ class VenueHoursWorker(val fsClient: FoursquareClient) extends Actor
 
   def receive: Receive = {
     case GetVenueHoursFor(vid, token) =>
-      okOrElse(fsClient.venueHours(vid, token))(vhs => sender ! GotVenueHoursFor(vid, Some(vhs))){ err =>
+      okOrElse(fsClient.venueHours(vid, token)) {
+        vhs => sender ! GotVenueHoursFor(vid, Some(vhs))
+      } { err =>
         log.warning(s"a Foursquare API error occurred: {}", err)
         sender ! GotVenueHoursFor(vid, None)
       }

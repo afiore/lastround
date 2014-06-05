@@ -15,25 +15,16 @@ sealed case class Location(
     country:String,
     city: Option[String])
 
+object VenueId {
+  implicit def VenueId2String(v:VenueId):String = v.id
+}
 sealed case class VenueId(val id:String)
 
 sealed case class Venue(
      id: VenueId,
      name: String,
      location: Location,
-     url: Option[String]) {
-
-  def withOpeningHours(oVh: Option[VenueOpeningHours]) =
-    VenueWithOpeningHours(this, oVh)
-  }
-
-sealed case class VenueWithOpeningHours(
-    venue: Venue,
-    openingHours: Option[VenueOpeningHours])
-
-object VenueConversions {
-  implicit def VenueId2String(v:VenueId):String = v.id
-}
+     url: Option[String])
 
 object VenueJSONProtocol extends DefaultJsonProtocol {
   implicit object VenueIdFormat extends JsonFormat[VenueId] {
@@ -55,7 +46,6 @@ object VenueJSONProtocol extends DefaultJsonProtocol {
         Nil
     }
   }
-
   implicit val locationFormat = jsonFormat8(Location)
   implicit val venueFormat    = jsonFormat4(Venue)
 }

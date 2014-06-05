@@ -9,14 +9,14 @@ object Responses {
   sealed trait ApiError {
     val message: String
   }
-  case class InvalidAuth(message:String)      extends ApiError
-  case class ParamError(message:String)       extends ApiError
-  case class EndpointError(message:String)    extends ApiError
-  case class NotAuthorised(message:String)    extends ApiError
+  case class InvalidAuth(message:String)       extends ApiError
+  case class ParamError(message:String)        extends ApiError
+  case class EndpointError(message:String)     extends ApiError
+  case class NotAuthorised(message:String)     extends ApiError
   case class RateLimitExceeded(message:String) extends ApiError
-  case class Deprecated(message:String)       extends ApiError
-  case class ServerError(message:String)      extends ApiError
-  case class OtherError(message:String)       extends ApiError
+  case class Deprecated(message:String)        extends ApiError
+  case class ServerError(message:String)       extends ApiError
+  case class OtherError(message:String)        extends ApiError
 
   sealed trait FoursquareResponse[T]
   case class ResponseOK[T: JsonFormat](results: T) extends FoursquareResponse[T]
@@ -32,10 +32,15 @@ object Responses {
   object FSResponseJsonProtocol extends DefaultJsonProtocol
                                 with SprayJsonSupport {
 
+    implicit object ApiError2Json extends JsonFormat[ApiError] {
+      def write(err: ApiError): JsValue = JsObject("error"  -> JsString(err.message))
+      def read(v: JsValue): ApiError = ???
+    }
+
     implicit def FsResp2Json[T: JsonFormat] = new RootJsonFormat[FoursquareResponse[T]] {
       def write(resp:FoursquareResponse[T]):JsValue = resp match {
         case ResponseOK(value)  => JsObject("result" -> value.toJson)
-        case ResponseError(err) => JsObject("error"  -> JsString(err.message))
+        case ResponseError(err) => err.toJson
       }
 
       def read(v:JsValue):FoursquareResponse[T] = {

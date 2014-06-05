@@ -79,7 +79,12 @@ object VenueHours {
   }
   sealed case class VenueOpeningHours(
       hours: List[TimeFrame],
-      popular: List[TimeFrame])
+      popular: List[TimeFrame]) {
+    def isEmpty: Boolean = this == VenueOpeningHours.empty
+    def isNotEmpty: Boolean = !isEmpty
+  }
+
+  sealed case class VenueHoursFor(vid:VenueId, vhs: VenueOpeningHours)
 
   object VenueHoursJSONProtocol extends DefaultJsonProtocol {
 
@@ -152,18 +157,12 @@ object VenueHours {
               "VenueOpeningHours2Json: Cannot find both 'hours' and 'popular' attributes")
       }
     }
-
-    implicit object VenueWithOpeningHours2Json extends JsonFormat[VenueWithOpeningHours] {
-      def write(vh:VenueWithOpeningHours):JsValue = JsObject(
-        "venue" -> vh.venue.toJson,
-        "hours" -> vh.openingHours.toJson
+    implicit object VenueHoursFor2Json extends JsonFormat[VenueHoursFor] {
+      def write(vhf:VenueHoursFor):JsValue = JsObject(
+        "venueId" -> vhf.vid.toJson,
+        "hours" -> vhf.vhs.toJson
       )
-      def read(v:JsValue):VenueWithOpeningHours = ???
-    }
-
-    implicit object VenueWithOpeningHoursList2Json extends JsonFormat[List[VenueWithOpeningHours]] {
-      def write(vhs:List[VenueWithOpeningHours]): JsValue = JsArray(vhs.map(_.toJson))
-      def read(v:JsValue):List[VenueWithOpeningHours] = ???
+      def read(v:JsValue):VenueHoursFor= ???
     }
   }
 }
