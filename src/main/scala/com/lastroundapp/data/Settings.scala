@@ -13,4 +13,5 @@ object Settings {
   val foursquareRedirectUrl   = conf.getString("lastround.foursquare.redirect-url")
   val venueHoursWorkerTimeout = conf.getInt("lastround.venue-hours-worker.timeout")
   val venueSearcherTimeout    = conf.getInt("lastround.venue-searcher.timeout")
+  val streamerTimeout         = conf.getInt("lastround.result-streamer.timeout")
 }

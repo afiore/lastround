@@ -13,7 +13,6 @@ import com.lastroundapp.data.VenueHours._
 import com.lastroundapp.data.Responses.NotAuthorised
 import com.lastroundapp.data.VenueHours.OpeningTime
 import com.lastroundapp.data.VenueHours.TimeFrame
-import scala.Some
 import com.lastroundapp.data.VenueId
 
 class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)

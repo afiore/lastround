@@ -1,5 +1,6 @@
 package com.lastroundapp.actors
 
+import com.lastroundapp.data.Settings
 import com.lastroundapp.data.Events._
 import scala.concurrent.duration._
 
@@ -33,7 +34,7 @@ class ResultStreamer(
   venueSearcher ! RunSearch(q)
 
   responder ! ChunkedResponseStart(HttpResponse(entity = HttpEntity(`application/json`, "\n")))
-  context.system.scheduler.scheduleOnce(30.seconds, self, ResponderTimedOut)
+  context.system.scheduler.scheduleOnce(Settings.streamerTimeout.millis, self, ResponderTimedOut)
 
   def receive = {
     case ResponderTimedOut =>
@@ -61,6 +62,6 @@ class ResultStreamer(
       context.stop(self)
   }
 
-  private def jsonChunk[T: JsonFormat](serverEvent: ServerEvent[T]):String =
-    serverEvent.toJson.compactPrint ++ lineSeparator
+  private def jsonChunk[T: JsonFormat](serverEvent: ServerEvent[T]): MessageChunk =
+    MessageChunk(serverEvent.toJson.compactPrint ++ lineSeparator)
 }
