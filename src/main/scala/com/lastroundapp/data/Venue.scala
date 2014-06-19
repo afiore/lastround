@@ -1,9 +1,10 @@
 package com.lastroundapp.data
 
+import com.lastroundapp.data.Events.{VenueSearchResult, ServerEvent}
+
 import scala.language.implicitConversions
 
 import spray.json._
-import VenueHours.VenueOpeningHours
 
 sealed case class Location(
     address: Option[String],

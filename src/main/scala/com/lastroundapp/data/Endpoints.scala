@@ -1,11 +1,11 @@
 package com.lastroundapp.data
 
-import scala.util.{Try, Success, Failure}
+import scala.language.implicitConversions
+import scala.util.{Success, Try}
+
 import spray.http._
 import spray.http.Uri._
-import scala.language.implicitConversions
-import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
-import scala.util.Try
+import spray.httpx.unmarshalling.{FromStringDeserializer, MalformedContent}
 
 object Endpoints {
   type Param = (String, String)

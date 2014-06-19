@@ -1,9 +1,8 @@
 package com.lastroundapp.data
 
-import akka.event.LoggingAdapter
-
-import spray.json._
+import com.lastroundapp.data.Events._
 import spray.httpx.SprayJsonSupport
+import spray.json._
 
 object Responses {
   sealed trait ApiError {
