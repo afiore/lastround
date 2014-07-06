@@ -3,6 +3,7 @@ package com.lastroundapp.actors
 import com.lastroundapp.data.Settings
 import com.lastroundapp.data.Events._
 import scala.concurrent.duration._
+import scala.language.implicitConversions._
 
 import akka.actor._
 import com.lastroundapp.actors.VenueHoursWorker.GotVenueHoursFor

@@ -2,6 +2,7 @@ package com.lastroundapp.actors
 
 import com.lastroundapp.actors.VenueHoursWorker.GotVenueHoursFor
 import com.lastroundapp.actors.VenueSearcher.{EndOfVenueHours, GotVenueResults, RunSearch}
+import com.lastroundapp.data.Responses.ParamError
 import com.lastroundapp.data.VenueHours.VenueOpeningHours
 
 import scala.concurrent.duration._
@@ -25,7 +26,7 @@ class ResultStreamerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
 
   import FoursquareTestClient._
 
-  val timeout = 300.millis
+  val timeout = 10000.millis
   val q = venueSearchQuerySuccess
   val venueList = List(venue1, venue2)
   val vh1 = VenueOpeningHours.empty
@@ -53,6 +54,17 @@ class ResultStreamerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
         responder.expectMsgPF(15.millis) { case _: MessageChunk => true}
       }
     }
+    "ends the stream after receiving the GotVenueResult(Left(_))" in {
+      within(200.millis) {
+        newStreamer()
+        searcher.expectMsg(RunSearch(q))
+        searcher.reply(GotVenueResults(Left(ParamError("bad actor!"))))
+        responder.expectMsgPF(35.millis) { case _: ChunkedResponseStart => true}
+        responder.expectMsgPF(50.millis) { case _: MessageChunk => true }
+        responder.expectMsgPF(75.millis) { case _: ChunkedMessageEnd => true }
+      }
+    }
+
     "ends the stream after receiving the EndOfVenueHours message" in {
       within(100.millis) {
         newStreamer()

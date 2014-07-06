@@ -1,6 +1,5 @@
 package com.lastroundapp.data
 
-import scala.language.implicitConversions._
 import com.lastroundapp.data.VenueHours._
 import com.lastroundapp.data.Responses._
 import spray.json._
