@@ -18,12 +18,17 @@ object Events {
     override def toString = "SERVER_ERROR"
   }
 
-  case class ServerEvent[T: JsonFormat](eventType: ServerEventType, data: T)
+  case class ServerEvent[T: JsonFormat](eventType: ServerEventType, data: T) {
+    def asHtml5Event: String = {
+      s"event: ${eventType}\ndata: ${data.toJson.compactPrint}"
+    }
+  }
 
   object ServerEventConversions {
     import VenueJSONProtocol._
     import VenueHoursJSONProtocol._
     import FSResponseJsonProtocol._
+    import scala.language.implicitConversions
 
     implicit def venueList2ServerEvent(vs: List[Venue]): ServerEvent[List[Venue]] =
       ServerEvent(VenueSearchResult, vs)

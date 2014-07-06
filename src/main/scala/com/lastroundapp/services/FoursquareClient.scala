@@ -1,13 +1,46 @@
 package com.lastroundapp.services
 
-import com.lastroundapp.data.{FSToken, VenueId, VenueHoursResponse, VenueSearchResponse}
+import com.lastroundapp.data.{VenueId, VenueHoursResponse, VenueSearchResponse}
 import com.lastroundapp.data.Endpoints.{AccessToken, LatLon}
 import akka.actor.ActorContext
+import spray.http.{ContentType, MediaType}
 import scala.concurrent.ExecutionContext
 import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import spray.http.MediaTypes._
+
 
 object FoursquareClient {
-  case class VenueSearchQuery(ll:LatLon, token:AccessToken)
+  object Format {
+    def fromHeaderValue(accept: Option[String]) =
+      if (accept == Some("text/event-stream")) EventStream else JsonStream
+  }
+
+  trait Format {
+    val lineSeparator: String
+    val contentType: MediaType
+  }
+
+  object JsonStream extends Format {
+    val lineSeparator = "\r\n"
+    val contentType   = `application/json`
+  }
+
+  object EventStream extends Format {
+    val lineSeparator = "\n\n"
+    val contentType   = register(
+      MediaType.custom(
+        mainType = "text",
+        subType  = "event-stream",
+        compressible = true,
+        binary = false
+      )
+    )
+  }
+
+  case class VenueSearchQuery(
+      ll:LatLon,
+      token:AccessToken,
+      format: Format = EventStream)
 }
 
 abstract class FoursquareClient {

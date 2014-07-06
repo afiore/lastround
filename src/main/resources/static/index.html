@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <title>Hello world</title>
+    <script src="javascript/sse.js"></script>
+    <style>
+      blink {
+        font-size: 3.5em;
+        font-weight: bold;
+        background: #00FF00;
+        color: white;
+        display: none;
+        -webkit-animation: blink 1s step-end infinite;
+        animation: blink 1s step-end infinite
+      }
+
+      #lat-lon {
+        background: #EFFE66;
+        color: #fff;
+      }
+
+      @-webkit-keyframes blink {
+          67% { opacity: 0 }
+      }
+      @keyframes blink {
+          67% { opacity: 0 }
+      }
+
+      a.has-opening-time {
+        background: #00FF00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Lastround API client</h1>
+    <p>Lat Lon: <span id="lat-lon">...</span></p>
+    <blink>...</blink>
+  </body>
+</html>

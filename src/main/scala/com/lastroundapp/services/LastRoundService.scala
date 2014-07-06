@@ -9,11 +9,12 @@ import com.lastroundapp.data.{FSToken, Endpoints}
 
 import java.util.UUID
 
+import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes.{TemporaryRedirect, BadRequest}
-import spray.routing.HttpService
+import spray.routing.{HttpService, RequestContext}
 
 import Endpoints._
-import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery,Format}
 import spray.httpx.encoding.Gzip
 
 class LastRoundActor (val venueSearcher:ActorRef) extends Actor with LastRoundService {
@@ -33,13 +34,19 @@ trait LastRoundService extends HttpService {
   val route =
     path("search" / "open-venues") {
       get {
-        parameters('ll.as[LatLon], 'token.as[AccessToken]) { (latLon, token) => request =>
-          actorRefFactory.actorOf(Props(
-            classOf[ResultStreamer],
-            VenueSearchQuery(latLon, token),
-            venueSearcher,
-            request.responder),
-            s"result-streamer-${UUID.randomUUID()}")
+        optionalHeaderValueByName("Accept") { accept =>
+          val format = Format.fromHeaderValue(accept)
+            parameters('ll.as[LatLon], 'token.as[AccessToken]) { (latLon, token) => ctx =>
+              actorRefFactory.actorOf(
+                Props(
+                  classOf[ResultStreamer],
+                  VenueSearchQuery(latLon, token, format),
+                  venueSearcher,
+                  ctx.responder
+                ),
+                s"result-streamer-${UUID.randomUUID()}"
+              )
+          }
         }
       }
     } ~
@@ -60,7 +67,5 @@ trait LastRoundService extends HttpService {
         }
       }
     } ~
-    pathPrefix("filez") {
-      getFromResourceDirectory("static")
-    }
+    getFromResourceDirectory("static")
 }

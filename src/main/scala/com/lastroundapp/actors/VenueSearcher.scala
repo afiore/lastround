@@ -33,8 +33,8 @@ object VenueSearcher {
 class VenueSearcher(
   val fsClient:FoursquareClient,
   val workerPool:ActorRef) extends Actor with ActorLogging
-                                           with Stash
-                                           with ResponseHandler {
+                                         with Stash
+                                         with ResponseHandler {
 
     import context.dispatcher
     import VenueSearcher._
