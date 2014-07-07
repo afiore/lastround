@@ -6,7 +6,6 @@ import akka.testkit.{TestProbe, ImplicitSender, TestActorRef, TestKit}
 import akka.actor.ActorSystem
 
 import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
-import org.scalatest.mock.MockitoSugar
 import com.lastroundapp.services.FoursquareTestClient
 import com.lastroundapp.data.Endpoints.AccessToken
 import com.lastroundapp.data.VenueHours._
@@ -19,7 +18,6 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
                                               with ImplicitSender
                                               with WordSpecLike
                                               with Matchers
-                                              with MockitoSugar
                                               with BeforeAndAfterAll {
 
   import VenueHoursWorker._

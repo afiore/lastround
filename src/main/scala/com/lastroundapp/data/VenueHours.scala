@@ -2,6 +2,7 @@ package com.lastroundapp.data
 
 import scala.language.implicitConversions
 import java.util.Calendar
+import org.joda.time.DateTime
 import spray.json._
 
 object VenueHours {
@@ -26,17 +27,17 @@ object VenueHours {
     case Sunday    => 7
   }
 
-  implicit def int2WeekDay(n:Int):WeekDay = n match {
-    case 1 => Monday
-    case 2 => Tuesday
-    case 3 => Wednesday
-    case 4 => Thursday
-    case 5 => Friday
-    case 6 => Saturday
-    case 7 => Sunday
-  }
-
   object WeekDay {
+    implicit def int2WeekDay(n:Int):WeekDay = n match {
+      case 1 => Monday
+      case 2 => Tuesday
+      case 3 => Wednesday
+      case 4 => Thursday
+      case 5 => Friday
+      case 6 => Saturday
+      case 7 => Sunday
+    }
+
     def today:WeekDay =
       Calendar.getInstance.get(Calendar.DAY_OF_WEEK) match {
         case 1 => 7
@@ -49,7 +50,7 @@ object VenueHours {
        "%02d".format(tod.hours) ++
        "%02d".format(tod.minutes)
 
-    implicit def string2tod(rawS:String):TimeOfDay = {
+    implicit def string2tod(rawS: String): TimeOfDay = {
       val s = rawS.filter(_.isDigit)
 
       if (s.length == 4 && s.forall(_.isDigit)) {
@@ -60,6 +61,11 @@ object VenueHours {
         throw new IllegalArgumentException(
           s"must be a string of 4 digits, got $s instead")
       }
+    }
+
+    def now: TimeOfDay = {
+      val d = DateTime.now
+      TimeOfDay(d.getHourOfDay, d.getMinuteOfHour)
     }
   }
   sealed case class TimeOfDay(hours:Int, minutes:Int) {

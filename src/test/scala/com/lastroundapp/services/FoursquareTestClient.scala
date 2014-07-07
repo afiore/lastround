@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext
 import com.lastroundapp.data._
 import com.lastroundapp.data.Responses.{ResponseError,NotAuthorised,RateLimitExceeded, ResponseOK}
 import VenueHours._
-import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery, DayWithTime}
 
 object FoursquareTestClient {
   val venue1         =
@@ -33,8 +33,8 @@ object FoursquareTestClient {
   val vidSuccess = VenueId("success-venue")
 
   val ll = LatLon(45.0, 50.0)
-  val venueSearchQuerySuccess = VenueSearchQuery(ll, AccessToken.default)
-  val venueSearchQueryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"))
+  val venueSearchQuerySuccess = VenueSearchQuery(ll, AccessToken.default, DayWithTime.now)
+  val venueSearchQueryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"), DayWithTime.now)
 
   val venueHours1 =
     VenueOpeningHours(

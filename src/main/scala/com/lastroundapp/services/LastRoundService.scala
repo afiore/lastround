@@ -14,7 +14,7 @@ import spray.http.StatusCodes.{TemporaryRedirect, BadRequest}
 import spray.routing.{HttpService, RequestContext}
 
 import Endpoints._
-import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery,Format}
+import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery,Format,DayWithTime}
 import spray.httpx.encoding.Gzip
 
 class LastRoundActor (val venueSearcher:ActorRef) extends Actor with LastRoundService {
@@ -36,11 +36,14 @@ trait LastRoundService extends HttpService {
       get {
         optionalHeaderValueByName("Accept") { accept =>
           val format = Format.fromHeaderValue(accept)
-            parameters('ll.as[LatLon], 'token.as[AccessToken]) { (latLon, token) => ctx =>
+            parameters('ll.as[LatLon],
+                       'dayWithTime.as[DayWithTime],
+                       'token.as[AccessToken]) { (latLon, dayTime, token) => ctx =>
+
               actorRefFactory.actorOf(
                 Props(
                   classOf[ResultStreamer],
-                  VenueSearchQuery(latLon, token, format),
+                  VenueSearchQuery(latLon, token, dayTime, format),
                   venueSearcher,
                   ctx.responder
                 ),
