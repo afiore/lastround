@@ -37,7 +37,7 @@ trait LastRoundService extends HttpService {
         optionalHeaderValueByName("Accept") { accept =>
           val format = Format.fromHeaderValue(accept)
             parameters('ll.as[LatLon],
-                       'dayWithTime.as[DayWithTime],
+                       'daytime.as[DayWithTime],
                        'token.as[AccessToken]) { (latLon, dayTime, token) => ctx =>
 
               actorRefFactory.actorOf(
