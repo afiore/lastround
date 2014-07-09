@@ -4,7 +4,6 @@ import com.lastroundapp.data.Settings
 import com.lastroundapp.data.Events._
 import com.lastroundapp.services.FoursquareClient
 import scala.concurrent.duration._
-import scala.language.implicitConversions._
 
 import akka.actor._
 import com.lastroundapp.actors.VenueHoursWorker.GotVenueHoursFor
@@ -12,7 +11,6 @@ import com.lastroundapp.data.VenueHours.VenueHoursFor
 import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 import spray.can.Http
 import spray.http._
-import spray.http.MediaTypes._
 import spray.json._
 
 class ResultStreamer(

@@ -1,9 +1,7 @@
 package com.lastroundapp.data
 
 import spray.json._
-import DefaultJsonProtocol._
 import spray.http.Uri
-import spray.http.Uri._
 import spray.httpx.SprayJsonSupport
 
 case class FSToken(token: String)

@@ -82,7 +82,11 @@ object VenueHours {
       hours < that.hours || hours == that.hours && minutes <= that.minutes
   }
 
-  sealed case class OpeningTime(start:TimeOfDay, end:TimeOfDay) {
+  sealed case class OpeningTime(
+      start:TimeOfDay,
+      end:TimeOfDay,
+      afterMidnight: Boolean = false) {
+
     def openAt(t: TimeOfDay): Boolean = start <= t && end > t
   }
 
@@ -136,14 +140,17 @@ object VenueHours {
     }
 
     implicit object OpeningTime2Json extends JsonFormat[OpeningTime] {
-      def write(ot:OpeningTime):JsValue = JsObject(
-        "start" -> JsString(ot.start),
-        "end"   -> JsString(ot.end)
-      )
+      def write(ot:OpeningTime):JsValue = {
+        JsObject(
+          "start"         -> JsString(ot.start),
+          "end"           -> JsString(ot.end),
+          "afterMidnight" -> JsBoolean(ot.afterMidnight)
+        )
+      }
 
       def read(v:JsValue) = v.asJsObject.getFields("start", "end") match {
         case Seq(JsString(start), JsString(end)) =>
-          OpeningTime(start,end)
+          OpeningTime(start, end, end.startsWith("+"))
         case _ =>
           throw new DeserializationException(
             "OpeningTime2Json: Cannot parse start/end attributes")
@@ -188,7 +195,7 @@ object VenueHours {
             popular.convertTo[List[TimeFrame]])
           case _ =>
             throw new DeserializationException(
-              "VenueOpeningHours2Json: Cannot find both 'hours' and 'popular' attributes")
+              "VenueOpeningHours2Json: Cannot find either 'hours' or 'popular' attributes")
       }
     }
     implicit object VenueHoursFor2Json extends JsonFormat[VenueHoursFor] {

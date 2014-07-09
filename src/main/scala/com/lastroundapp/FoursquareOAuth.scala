@@ -11,7 +11,6 @@ import com.lastroundapp.data.{FSToken, FoursquareJsonProtocol, Endpoints}
 import Endpoints._
 
 class FoursquareOAuth(val log: LoggingAdapter) extends LoggablePipeline {
-  import DefaultJsonProtocol._
   import FoursquareJsonProtocol._
 
   def getAccessToken(code:String)(implicit ac:ActorContext, ec:ExecutionContext): Future[Option[FSToken]] =

@@ -1,6 +1,7 @@
 package com.lastroundapp.data
 
 import org.scalatest._
+import Inside._
 
 import spray.json._
 

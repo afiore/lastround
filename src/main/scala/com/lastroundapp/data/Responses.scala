@@ -1,6 +1,5 @@
 package com.lastroundapp.data
 
-import com.lastroundapp.data.Events._
 import spray.httpx.SprayJsonSupport
 import spray.json._
 
