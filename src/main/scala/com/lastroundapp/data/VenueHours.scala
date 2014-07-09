@@ -71,28 +71,56 @@ object VenueHours {
   sealed case class TimeOfDay(hours:Int, minutes:Int) {
     require(hours >= 0 && hours < 24,     "hours must be within 0 and 23")
     require(minutes >= 0 && minutes < 60, "minutes must be within 0 and 59")
+
+    def >(that: TimeOfDay): Boolean =
+      hours >= that.hours && minutes > that.minutes
+    def >=(that: TimeOfDay): Boolean =
+      hours >= that.hours && minutes >= that.minutes
+    def <(that: TimeOfDay): Boolean =
+      hours < that.hours || hours == that.hours && minutes < that.minutes
+    def <=(that: TimeOfDay): Boolean =
+      hours < that.hours || hours == that.hours && minutes <= that.minutes
   }
 
-  sealed case class OpeningTime(start:TimeOfDay, end:TimeOfDay)
+  sealed case class OpeningTime(start:TimeOfDay, end:TimeOfDay) {
+    def openAt(t: TimeOfDay): Boolean = start <= t && end > t
+  }
 
   sealed case class TimeFrame(days:Set[WeekDay], open:List[OpeningTime]) {
-    def includesToday: Boolean = days.contains(WeekDay.today)
+    def closingTimeFor(d: WeekDay, t: TimeOfDay): Option[TimeOfDay] =
+      if (!days.contains(d)) None
+      else open.filter(_.openAt(t)).lastOption.map(_.end)
   }
+
+  sealed case class ClosingTime(time:TimeOfDay, infered: Boolean)
 
   object VenueOpeningHours {
     def empty = VenueOpeningHours(List.empty, List.empty)
   }
-  sealed case class VenueOpeningHours(
-      hours: List[TimeFrame],
-      popular: List[TimeFrame]) {
+  sealed case class VenueOpeningHours(hours: List[TimeFrame], popular: List[TimeFrame]) {
     def isEmpty: Boolean = this == VenueOpeningHours.empty
     def isNotEmpty: Boolean = !isEmpty
+    def closingTimeFor(d: WeekDay, t: TimeOfDay): Option[ClosingTime] = {
+      def findFirst(tfs: List[TimeFrame]): Option[TimeOfDay] = tfs match {
+        case Nil =>
+          None
+        case tf :: rest =>
+          tf.closingTimeFor(d, t).orElse(findFirst(rest))
+      }
+      (findFirst(hours), findFirst(popular)) match {
+        case (Some(t), _)    =>
+          Some(ClosingTime(t, true))
+        case (None, Some(t)) =>
+          Some(ClosingTime(t, false))
+        case _ =>
+          None
+      }
+    }
   }
 
   sealed case class VenueHoursFor(vid:VenueId, vhs: VenueOpeningHours)
 
   object VenueHoursJSONProtocol extends DefaultJsonProtocol {
-
     import VenueJSONProtocol._
 
     implicit object WeekDay2Json extends JsonFormat[WeekDay] {
@@ -102,7 +130,8 @@ object VenueHours {
         case JsNumber(n) if n.toInt > 0 && n.toInt <= 7 =>
           n.toInt
         case _ =>
-          throw new DeserializationException("WeekDay2Json: Number between 1 and 7 expected")
+          throw new DeserializationException(
+            "WeekDay2Json: Number between 1 and 7 expected")
       }
     }
 
