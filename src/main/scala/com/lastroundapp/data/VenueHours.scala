@@ -1,8 +1,9 @@
 package com.lastroundapp.data
 
 import scala.language.implicitConversions
-import java.util.Calendar
-import org.joda.time.DateTime
+import scala.util.{Try, Success}
+import org.joda.time.{DateTime, Interval}
+import spray.httpx.unmarshalling.{FromStringDeserializer, MalformedContent}
 import spray.json._
 
 object VenueHours {
@@ -37,12 +38,16 @@ object VenueHours {
       case 6 => Saturday
       case 7 => Sunday
     }
+  }
 
-    def today:WeekDay =
-      Calendar.getInstance.get(Calendar.DAY_OF_WEEK) match {
-        case 1 => 7
-        case n => n
+  implicit val DateTimeDeserialiser = new FromStringDeserializer[DateTime] {
+    def apply(s: String) = {
+      val tDateTime = Try { new DateTime(s.toLong) }
+      tDateTime match {
+        case Success(d) => Right(d)
+        case _ => Left(MalformedContent(s"Cannot parse string $s as a DateTime"))
       }
+    }
   }
 
   object TimeOfDay {
@@ -50,50 +55,60 @@ object VenueHours {
        "%02d".format(tod.hours) ++
        "%02d".format(tod.minutes)
 
-    implicit def string2tod(rawS: String): TimeOfDay = {
-      val s = rawS.filter(_.isDigit)
-
-      if (s.length == 4 && s.forall(_.isDigit)) {
-        val (hs, ms) = s.splitAt(2)
+    implicit def string2tod(s: String): TimeOfDay = s match {
+      case regexp(hs, ms) =>
         TimeOfDay(hs.toInt, ms.toInt)
-      }
-      else {
+      case _ =>
         throw new IllegalArgumentException(
           s"must be a string of 4 digits, got $s instead")
-      }
     }
 
     def now: TimeOfDay = {
       val d = DateTime.now
       TimeOfDay(d.getHourOfDay, d.getMinuteOfHour)
     }
+    private val regexp = """\+?(\d\d)(\d\d)""".r
   }
   sealed case class TimeOfDay(hours:Int, minutes:Int) {
-    require(hours >= 0 && hours < 24,     "hours must be within 0 and 23")
+    require(hours >= 0 && hours < 24, "hours must be within 0 and 23")
     require(minutes >= 0 && minutes < 60, "minutes must be within 0 and 59")
-
-    def >(that: TimeOfDay): Boolean =
-      hours >= that.hours && minutes > that.minutes
-    def >=(that: TimeOfDay): Boolean =
-      hours >= that.hours && minutes >= that.minutes
-    def <(that: TimeOfDay): Boolean =
-      hours < that.hours || hours == that.hours && minutes < that.minutes
-    def <=(that: TimeOfDay): Boolean =
-      hours < that.hours || hours == that.hours && minutes <= that.minutes
   }
 
   sealed case class OpeningTime(
-      start:TimeOfDay,
-      end:TimeOfDay,
-      afterMidnight: Boolean = false) {
+      start: TimeOfDay,
+      end: TimeOfDay,
+      endsNextDay: Boolean = false) {
 
-    def openAt(t: TimeOfDay): Boolean = start <= t && end > t
+    def openOn(dt: DateTime): Boolean = {
+      this.toInterval(timeFrameDay(dt))
+        .contains(dt)
+    }
+    def timeFrameDay(dt: DateTime): WeekDay =
+      if (isNightTime(dt))
+        dt.minusDays(1).getDayOfWeek
+      else
+        dt.getDayOfWeek
+
+    private def isNightTime(dt: DateTime): Boolean =
+      (0 until 5) contains(dt.getHourOfDay)
+
+    private def toInterval(d: WeekDay): Interval = {
+      val startD = mkDate(d, start)
+      val endD   = mkDate(d, end)
+      if (endsNextDay)
+        new Interval(startD, endD.plusDays(1))
+      else
+        new Interval(startD, endD)
+    }
+
+    private def mkDate(d: WeekDay, t: TimeOfDay) =
+      DateTime.now.withDayOfWeek(d).withTime(t.hours, t.minutes, 0, 0)
   }
 
   sealed case class TimeFrame(days:Set[WeekDay], open:List[OpeningTime]) {
-    def closingTimeFor(d: WeekDay, t: TimeOfDay): Option[TimeOfDay] =
-      if (!days.contains(d)) None
-      else open.filter(_.openAt(t)).lastOption.map(_.end)
+    def openingTimeAfter(dt: DateTime): Option[OpeningTime] =
+      if (!days.contains(dt.getDayOfWeek)) None
+      else open.find(_.openOn(dt))
   }
 
   sealed case class ClosingTime(time:TimeOfDay, infered: Boolean)
@@ -104,26 +119,21 @@ object VenueHours {
   sealed case class VenueOpeningHours(hours: List[TimeFrame], popular: List[TimeFrame]) {
     def isEmpty: Boolean = this == VenueOpeningHours.empty
     def isNotEmpty: Boolean = !isEmpty
-    def closingTimeFor(d: WeekDay, t: TimeOfDay): Option[ClosingTime] = {
-      def findFirst(tfs: List[TimeFrame]): Option[TimeOfDay] = tfs match {
-        case Nil =>
-          None
-        case tf :: rest =>
-          tf.closingTimeFor(d, t).orElse(findFirst(rest))
-      }
-      (findFirst(hours), findFirst(popular)) match {
-        case (Some(t), _)    =>
-          Some(ClosingTime(t, true))
-        case (None, Some(t)) =>
-          Some(ClosingTime(t, false))
-        case _ =>
-          None
-      }
-    }
+
+    def closingTimeAfter(dt: DateTime): Option[ClosingTime] =
+      firstAfter(dt, hours, false)
+        .orElse(firstAfter(dt, popular, true))
+
+    private def firstAfter(dt: DateTime, l: List[TimeFrame], infered: Boolean): Option[ClosingTime] =
+      hours.map(_.openingTimeAfter(dt))
+        .collectFirst {
+          case Some(OpeningTime(_, t, _)) => ClosingTime(t, infered)
+        }
   }
 
   sealed case class VenueHoursFor(vid:VenueId, vhs: VenueOpeningHours)
 
+  // JSON serialisation
   object VenueHoursJSONProtocol extends DefaultJsonProtocol {
     import VenueJSONProtocol._
 
@@ -142,9 +152,9 @@ object VenueHours {
     implicit object OpeningTime2Json extends JsonFormat[OpeningTime] {
       def write(ot:OpeningTime):JsValue = {
         JsObject(
-          "start"         -> JsString(ot.start),
-          "end"           -> JsString(ot.end),
-          "afterMidnight" -> JsBoolean(ot.afterMidnight)
+          "start"       -> JsString(ot.start),
+          "end"         -> JsString(ot.end),
+          "endsNextDay" -> JsBoolean(ot.endsNextDay)
         )
       }
 

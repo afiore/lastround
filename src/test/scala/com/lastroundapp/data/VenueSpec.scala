@@ -4,7 +4,6 @@ import org.scalatest._
 import spray.json._
 
 import Responses._
-import DefaultJsonProtocol._
 import VenueJSONProtocol._
 import FSResponseJsonProtocol._
 

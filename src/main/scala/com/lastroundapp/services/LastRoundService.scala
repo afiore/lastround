@@ -8,13 +8,15 @@ import com.lastroundapp.auth.FoursquareOAuth
 import com.lastroundapp.data.{FSToken, Endpoints}
 
 import java.util.UUID
+import org.joda.time.DateTime
 
 import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes.{TemporaryRedirect, BadRequest}
 import spray.routing.{HttpService, RequestContext}
 
 import Endpoints._
-import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery,Format,DayWithTime}
+import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery, Format}
+import com.lastroundapp.data.VenueHours.DateTimeDeserialiser
 import spray.httpx.encoding.Gzip
 
 class LastRoundActor (val venueSearcher:ActorRef) extends Actor with LastRoundService {
@@ -37,13 +39,13 @@ trait LastRoundService extends HttpService {
         optionalHeaderValueByName("Accept") { accept =>
           val format = Format.fromHeaderValue(accept)
             parameters('ll.as[LatLon],
-                       'daytime.as[DayWithTime],
-                       'token.as[AccessToken]) { (latLon, dayTime, token) => ctx =>
+                       'datetime.as[DateTime],
+                       'token.as[AccessToken]) { (latLon, datetime, token) => ctx =>
 
               actorRefFactory.actorOf(
                 Props(
                   classOf[ResultStreamer],
-                  VenueSearchQuery(latLon, token, dayTime, format),
+                  VenueSearchQuery(latLon, token, datetime, format),
                   venueSearcher,
                   ctx.responder
                 ),

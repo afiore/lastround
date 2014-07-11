@@ -1,12 +1,14 @@
 package com.lastroundapp.services
 
+import org.joda.time.DateTime
+
 import com.lastroundapp.data.Endpoints.{LatLon, AccessToken}
 import akka.actor.ActorContext
 import scala.concurrent.ExecutionContext
 import com.lastroundapp.data._
 import com.lastroundapp.data.Responses.{ResponseError,NotAuthorised,RateLimitExceeded, ResponseOK}
 import VenueHours._
-import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery, DayWithTime}
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 
 object FoursquareTestClient {
   val venue1         =
@@ -33,8 +35,8 @@ object FoursquareTestClient {
   val vidSuccess = VenueId("success-venue")
 
   val ll = LatLon(45.0, 50.0)
-  val venueSearchQuerySuccess = VenueSearchQuery(ll, AccessToken.default, DayWithTime.now)
-  val venueSearchQueryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"), DayWithTime.now)
+  val venueSearchQuerySuccess = VenueSearchQuery(ll, AccessToken.default, DateTime.now)
+  val venueSearchQueryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"), DateTime.now)
 
   val venueHours1 =
     VenueOpeningHours(
