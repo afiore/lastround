@@ -9,7 +9,6 @@ import spray.json._
 object VenueHours {
 
   sealed trait WeekDay
-
   object Sunday    extends WeekDay
   object Monday    extends WeekDay
   object Tuesday   extends WeekDay
@@ -124,15 +123,14 @@ object VenueHours {
       firstAfter(dt, hours, false)
         .orElse(firstAfter(dt, popular, true))
 
-    private def firstAfter(dt: DateTime, l: List[TimeFrame], infered: Boolean): Option[ClosingTime] =
-      hours.map(_.openingTimeAfter(dt))
+    private def firstAfter(dt: DateTime, tfs: List[TimeFrame], infered: Boolean): Option[ClosingTime] =
+      tfs.view.map(_.openingTimeAfter(dt))
         .collectFirst {
-          case Some(OpeningTime(_, t, _)) => ClosingTime(t, infered)
+           case Some(OpeningTime(_, t, _)) => ClosingTime(t, infered)
         }
   }
 
   sealed case class VenueHoursFor(vid:VenueId, vhs: VenueOpeningHours)
-
   // JSON serialisation
   object VenueHoursJSONProtocol extends DefaultJsonProtocol {
     import VenueJSONProtocol._

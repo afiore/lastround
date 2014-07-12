@@ -6,8 +6,9 @@ object BuildSettings {
     organization := "com.lastroundapp",
     version := "1.0-SNAPSHOT",
     scalaVersion := "2.11.0",
-    scalacOptions ++= Seq("-Ywarn-unused-import", "-deprecation", "-unchecked", "-feature", "-encoding", "utf8"),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions ++= Seq("-deprecation", "-Ywarn-unused-import", "-unchecked", "-feature", "-encoding", "utf8"),
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+    scalacOptions in (Compile, console) ~= (_.filterNot(_ == "-Ywarn-unused-import"))
   )
 }
 
