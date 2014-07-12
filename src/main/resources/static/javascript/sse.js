@@ -23,7 +23,8 @@ function subscribeSSE (location) {
   var lon    = location.coords.longitude.toFixed(2);
   var latLon = lat + ',' + lon;
   var d      = (new Date()).valueOf();
-  var esUrl  = 'http://localhost:8080/search/open-venues?ll=' + latLon + "&datetime=" + d + '&token=514BEI2UIDTNON3RYD3SVLKZ3ZIBOPCUZQ1IS3WIM2JZLJQT';
+  var esUrl  = 'http://localhost:8080/search/open-venues?ll=' + latLon + 
+               "&datetime=" + d + '&token=514BEI2UIDTNON3RYD3SVLKZ3ZIBOPCUZQ1IS3WIM2JZLJQT';
   var source = new EventSource(esUrl);
 
   document.querySelector("#lat-lon").innerHTML = latLon;
@@ -56,7 +57,15 @@ function subscribeSSE (location) {
 
   function markVenueAsOpen(data) {
     var a = document.getElementById(data.venueId);
+    var openAt = "closes at:" + data.closingTime.hours + ":" + data.closingTime.minutes;
+    var infered = data.closingTime.infered;
+
     a.classList.add("has-opening-time");
+    if (infered) {
+      a.classList.add("infered")
+    }
+
+    a.setAttribute("title", openAt)
   }
 
   function displayVenues(data) {
