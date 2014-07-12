@@ -19,6 +19,7 @@ function geoLocateAndSubscribeSSE () {
 }
 
 function subscribeSSE (location) {
+  console.info("cookie:", document.cookie);
   var lat    = location.coords.latitude.toFixed(2);
   var lon    = location.coords.longitude.toFixed(2);
   var latLon = lat + ',' + lon;

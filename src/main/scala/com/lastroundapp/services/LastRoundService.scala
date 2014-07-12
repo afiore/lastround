@@ -11,7 +11,8 @@ import java.util.UUID
 import org.joda.time.DateTime
 
 import spray.http.HttpHeaders.RawHeader
-import spray.http.StatusCodes.{TemporaryRedirect, BadRequest}
+import spray.http.HttpCookie
+import spray.http.StatusCodes.{TemporaryRedirect, SeeOther, BadRequest}
 import spray.routing.{HttpService, RequestContext}
 
 import Endpoints._
@@ -64,7 +65,9 @@ trait LastRoundService extends HttpService {
           detach() {
             onSuccess(oauth.getAccessToken(code)(context, ec)) {
               case Some(FSToken(t)) =>
-                complete(s"Got $t")
+                setCookie(HttpCookie("authToken", t)) {
+                  redirect("/index.html", SeeOther)
+                }
               case None =>
                 complete(BadRequest)
             }
@@ -72,5 +75,12 @@ trait LastRoundService extends HttpService {
         }
       }
     } ~
-    getFromResourceDirectory("static")
+    optionalCookie("authToken") {
+      case Some(cookie) => {
+        setCookie(cookie) {
+          getFromResourceDirectory("static")
+        }
+      }
+      case _ => getFromResourceDirectory("static")
+    }
 }
