@@ -22,6 +22,7 @@ object Dependencies {
   val sprayTest       = "io.spray" %% "spray-testkit" % sprayVersion % "test"
   val akkaActor       = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   val akkaSlf4j       = "com.typesafe.akka" %%  "akka-slf4j" % akkaVersion
+  val logBack         = "ch.qos.logback" % "logback-classic" % "1.1.2"
   val akkaTestkit     = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
   val logback         = "ch.qos.logback" % "logback-classic" % "1.1.2"
   val scalaTest       = "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"
@@ -35,6 +36,7 @@ object Dependencies {
     sprayTest,
     akkaActor,
     akkaSlf4j,
+    logBack,
     akkaTestkit,
     logback,
     jodaTime,
@@ -57,12 +59,21 @@ object LastroundauthBuild extends Build {
   import sbtassembly.Plugin.AssemblyKeys
   import sbtassembly.Plugin.assemblySettings
 
+  val truncateLog = taskKey[Unit]("truncates the main logfile")
+  val truncateLogTask = truncateLog := {
+    println("truncating logs...")
+  }
+  val runTask = (run in Compile) <<= (run in Compile) dependsOn truncateLog
+
   lazy val root = Project("lastround-auth",
     file("."),
     settings = buildSettings ++
       ScalastyleSettings ++
       assemblySettings ++
-      Revolver.settings) settings (
+      Revolver.settings ++
+      truncateLogTask ++
+      runTask
+      ) settings (
     libraryDependencies ++= commonDeps,
         resolvers := Resolvers.resolvers,
         mainClass in AssemblyKeys.assembly := Some("com.lastroundapp.Boot")

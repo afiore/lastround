@@ -3,7 +3,7 @@ package com.lastroundapp.actors
 import com.lastroundapp.actors.VenueHoursWorker.GotVenueHoursFor
 import com.lastroundapp.actors.VenueSearcher.{EndOfVenueHours, GotVenueResults, RunSearch}
 import com.lastroundapp.data.Responses.ParamError
-import com.lastroundapp.data.VenueHours.VenueOpeningHours
+import com.lastroundapp.data.VenueHours.{TimeOfDay, ClosingTime}
 
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
@@ -27,9 +27,9 @@ class ResultStreamerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
   import FoursquareTestClient._
 
   val timeout = 10000.millis
-  val q = venueSearchQuerySuccess
+  val q = queryWithMatchingTime
   val venueList = List(venue1, venue2)
-  val vh1 = VenueOpeningHours.empty
+  val closingTime = ClosingTime(TimeOfDay(23,30), false)
   val responder = TestProbe()
   val searcher = TestProbe()
 
@@ -70,7 +70,7 @@ class ResultStreamerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
         newStreamer()
         searcher.expectMsg(RunSearch(q))
         searcher.reply(GotVenueResults(Right(venueList)))
-        searcher.reply(GotVenueHoursFor(venue1.id, Some(vh1)))
+        searcher.reply(GotVenueHoursFor(venue1.id, Some(closingTime)))
         searcher.reply(EndOfVenueHours)
 
         responder.expectMsgPF(10.millis) { case _: ChunkedResponseStart => true}

@@ -33,8 +33,8 @@ object Events {
     implicit def venueList2ServerEvent(vs: List[Venue]): ServerEvent[List[Venue]] =
       ServerEvent(VenueSearchResult, vs)
 
-    implicit def venueHoursFor2ServerEvent(vhf: VenueHoursFor): ServerEvent[VenueHoursFor] =
-      ServerEvent(VenueHours, vhf)
+    implicit def closingTime2ServerEvent(ctf: ClosingTimeFor): ServerEvent[ClosingTimeFor] =
+      ServerEvent(VenueHours, ctf)
 
     implicit def err2ServerEvent(err: ApiError): ServerEvent[ApiError] =
       ServerEvent(Error, err)

@@ -43,7 +43,7 @@ class VenueSearcher(
     def handleRunSearch: Receive = {
     case RunSearch(q) =>
       okOrElse(fsClient.venueSearch(q)) { vs:List[Venue] =>
-        vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id, q.token) }
+        vs.foreach { venue => workerPool ! GetVenueHoursFor(venue.id, q) }
         sender ! GotVenueResults(Right(vs))
 
         context.system.scheduler.scheduleOnce(searcherTimeout(vs), self, VenueHoursTimedOut)
@@ -82,10 +82,7 @@ class VenueSearcher(
 
     private def sendVenueHoursUnlessEmpty(recipient: ActorRef, msg: GotVenueHoursFor): Unit = {
       log.debug("Got venue for {}", msg.vid)
-      msg.vhs match {
-        case Some(vhs) if vhs.isNotEmpty => recipient ! msg
-        case _ =>
-      }
+      if (!msg.isBlank) recipient ! msg
     }
 
     private def respondAndReset(recipient: ActorRef) = {

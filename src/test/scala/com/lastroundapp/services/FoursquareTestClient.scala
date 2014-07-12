@@ -35,17 +35,23 @@ object FoursquareTestClient {
   val vidSuccess = VenueId("success-venue")
 
   val ll = LatLon(45.0, 50.0)
-  val venueSearchQuerySuccess = VenueSearchQuery(ll, AccessToken.default, DateTime.now)
-  val venueSearchQueryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"), DateTime.now)
+  val querySuccess = VenueSearchQuery(ll, AccessToken.default, DateTime.now)
+  val queryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"), DateTime.now)
 
+  val queryWithNonMatchingTime =
+    querySuccess.copy(dateTime = DateTime.now.withDayOfWeek(Tuesday))
+  val queryWithMatchingTime =
+    querySuccess.copy(dateTime = DateTime.now.withDayOfWeek(Monday).withHourOfDay(22))
+
+  val venueClosingTime = TimeOfDay(23,30)
   val venueHours1 =
     VenueOpeningHours(
       List(),
       List(
         TimeFrame(Set(Monday),
         List(OpeningTime(
-          TimeOfDay(22,0),
-          TimeOfDay(3,0))))))
+          TimeOfDay(18,30),
+          venueClosingTime)))))
 }
 
 class FoursquareTestClient extends FoursquareClient {
@@ -54,8 +60,10 @@ class FoursquareTestClient extends FoursquareClient {
   import VenueHoursJSONProtocol._
 
   def venueSearch(q:VenueSearchQuery)(implicit ac:ActorContext, ec:ExecutionContext): VenueSearchResponse =
-    if (q == venueSearchQuerySuccess) ResponseOK(List(venue1, venue2)) else ResponseError(NotAuthorised("bad token"))
+    if (q == querySuccess) ResponseOK(List(venue1, venue2))
+    else ResponseError(NotAuthorised("bad token"))
 
   def venueHours(vid:VenueId, token:AccessToken)(implicit ac:ActorContext, ec:ExecutionContext): VenueHoursResponse =
-    if (vid == vidSuccess) ResponseOK(venueHours1) else ResponseError(RateLimitExceeded("Take it easy..."))
+    if (vid == vidSuccess) ResponseOK(venueHours1)
+    else ResponseError(RateLimitExceeded("Take it easy..."))
  }

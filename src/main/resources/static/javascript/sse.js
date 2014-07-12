@@ -22,7 +22,8 @@ function subscribeSSE (location) {
   var lat    = location.coords.latitude.toFixed(2);
   var lon    = location.coords.longitude.toFixed(2);
   var latLon = lat + ',' + lon;
-  var esUrl  = 'http://localhost:8080/search/open-venues?ll=' + latLon +'&token=514BEI2UIDTNON3RYD3SVLKZ3ZIBOPCUZQ1IS3WIM2JZLJQT';
+  var d      = (new Date()).valueOf();
+  var esUrl  = 'http://localhost:8080/search/open-venues?ll=' + latLon + "&datetime=" + d + '&token=514BEI2UIDTNON3RYD3SVLKZ3ZIBOPCUZQ1IS3WIM2JZLJQT';
   var source = new EventSource(esUrl);
 
   document.querySelector("#lat-lon").innerHTML = latLon;

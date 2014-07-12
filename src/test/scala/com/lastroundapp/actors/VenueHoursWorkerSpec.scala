@@ -1,5 +1,8 @@
 package com.lastroundapp.actors
 
+import com.lastroundapp.data.VenueHours.{TimeOfDay, ClosingTime}
+import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+
 import scala.concurrent.duration._
 
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
@@ -8,7 +11,6 @@ import akka.actor.ActorSystem
 import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
 
 import com.lastroundapp.services.FoursquareTestClient
-import com.lastroundapp.data.Endpoints.AccessToken
 
 class VenueHoursWorkerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
                            with ImplicitSender
@@ -25,19 +27,34 @@ class VenueHoursWorkerSpec extends TestKit(ActorSystem("test-system", akkaConfig
 
   val fsClient = new FoursquareTestClient
   val worker = TestActorRef(new VenueHoursWorker(fsClient))
+  val closingTime = ClosingTime(venueClosingTime, true)
 
-  "VenueHoursWorker" should {
-     "respond with a non-blank GotVenueHoursFor when client responds successfully" in  {
-       within(1.second) {
-         worker ! GetVenueHoursFor(vidSuccess, AccessToken.default)
-         expectMsgType[GotVenueHoursFor] should be(GotVenueHoursFor(vidSuccess, Some(venueHours1)))
-       }
-     }
-     "respond with a blank 'GotVenueHoursFor' when client responds with failure" in {
+  "VenueHoursWorker" when {
+    "Foursquare responds with success" when {
+      "supplied date matches opening time" should {
+        "respond with a non-blank GotVenueHoursFor" in  {
+          within(1.second) {
+            worker ! GetVenueHoursFor(vidSuccess, queryWithMatchingTime)
+            expectMsgType[GotVenueHoursFor] should be(GotVenueHoursFor(vidSuccess, Some(closingTime)))
+          }
+        }
+      }
+      "supplied date does not match opening times" should {
+        "respond with a blank venue hours" in {
+          within(1.second) {
+            worker ! GetVenueHoursFor(vidSuccess, queryWithNonMatchingTime)
+            expectMsgType[GotVenueHoursFor] should be(GotVenueHoursFor(vidSuccess, None))
+          }
+        }
+      }
+    }
+    "Foursquare responds with failure" should {
+      "respond with a blank GotVenueHours" in {
         within(1.second) {
-          worker ! GetVenueHoursFor(vidFailure, AccessToken.default)
+          worker ! GetVenueHoursFor(vidFailure, queryWithMatchingTime)
           expectMsgType[GotVenueHoursFor] should be(GotVenueHoursFor(vidFailure, None))
         }
-     }
+      }
+    }
   }
 }

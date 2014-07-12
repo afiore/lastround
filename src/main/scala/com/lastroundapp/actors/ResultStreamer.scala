@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 import akka.actor._
 import com.lastroundapp.actors.VenueHoursWorker.GotVenueHoursFor
-import com.lastroundapp.data.VenueHours.VenueHoursFor
+import com.lastroundapp.data.VenueHours.ClosingTimeFor
 import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
 import spray.can.Http
 import spray.http._
@@ -49,9 +49,9 @@ class ResultStreamer(
       responder ! ChunkedMessageEnd
       context.stop(self)
 
-    case GotVenueHoursFor(vid, Some(vhs)) =>
+    case GotVenueHoursFor(vid, Some(closingTime)) =>
       log.info("Got venueHours {}", vid)
-      responder ! jsonChunk(VenueHoursFor(vid, vhs))
+      responder ! jsonChunk(ClosingTimeFor(vid, closingTime))
 
     case EndOfVenueHours =>
       responder ! ChunkedMessageEnd

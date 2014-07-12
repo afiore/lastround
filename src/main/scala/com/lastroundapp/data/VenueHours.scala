@@ -130,7 +130,9 @@ object VenueHours {
         }
   }
 
+  sealed case class ClosingTimeFor(vid: VenueId, ct: ClosingTime)
   sealed case class VenueHoursFor(vid:VenueId, vhs: VenueOpeningHours)
+
   // JSON serialisation
   object VenueHoursJSONProtocol extends DefaultJsonProtocol {
     import VenueJSONProtocol._
@@ -206,12 +208,22 @@ object VenueHours {
               "VenueOpeningHours2Json: Cannot find either 'hours' or 'popular' attributes")
       }
     }
-    implicit object VenueHoursFor2Json extends JsonFormat[VenueHoursFor] {
-      def write(vhf:VenueHoursFor):JsValue = JsObject(
-        "venueId" -> vhf.vid.toJson,
-        "hours" -> vhf.vhs.toJson
+
+    implicit object ClosingTime2Json extends JsonFormat[ClosingTime] {
+      def write(ct: ClosingTime): JsValue = JsObject(
+        "hours"   -> JsNumber(ct.time.hours),
+        "minutes" -> JsNumber(ct.time.minutes),
+        "infered" -> JsBoolean(ct.infered)
       )
-      def read(v:JsValue):VenueHoursFor= ???
+      def read(v:JsValue):ClosingTime = ???
+    }
+
+    implicit object ClosingTimeFor2Json extends JsonFormat[ClosingTimeFor] {
+      def write(ctf: ClosingTimeFor):JsValue = JsObject(
+        "venueId"  -> ctf.vid.toJson,
+        "closingTime" -> ctf.ct.toJson
+      )
+      def read(v:JsValue):ClosingTimeFor = ???
     }
   }
 }
