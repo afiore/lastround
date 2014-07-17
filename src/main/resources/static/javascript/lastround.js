@@ -2,20 +2,21 @@
 var lastroundApp = angular.module('lastroundApp', ['lastroundApp.services']);
 
 lastroundApp.controller('FoosCtrl',
-                       ['$scope', '$q', '$timeout', 'geolocation', 'venues',
-                       function ($scope, $q, $timeout, geolocation, venues) {
+                       ['$rootScope', '$scope', '$q', '$timeout', 'geolocation', 'venues',
+                       function ($rootScope, $scope, $q, $timeout, geolocation, venues) {
+
+  function onVenues (venues) {
+    $scope.venues = venues;
+    $scope.$digest();
+  }
+
+  function onVenueHours (vh) {
+    $scope.venues[vh.venueId].closingTime = vh.closingTime;
+    $scope.$digest();
+  }
 
   geolocation.getCoords().then(function (coords) {
     $scope.coords = coords;
-    venues.getOpenVenues(coords).then(function (venueList) {
-      $scope.venues = venueList;
-    });
+    venues.getOpenVenues(coords, onVenues, onVenueHours);
   });
-
-  $scope.$watch("venues", function (newVal) {
-    if (angular.isObject(newVal)) {
-      console.info("coords has changed", newVal);
-    }
-  });
-
 }]);

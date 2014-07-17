@@ -65,7 +65,6 @@ function subscribeSSE (location) {
     if (infered) {
       a.classList.add("infered")
     }
-
     a.setAttribute("title", openAt)
   }
 

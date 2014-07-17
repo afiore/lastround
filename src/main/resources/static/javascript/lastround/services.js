@@ -22,8 +22,8 @@ angular.module("lastroundApp.services", [])
     };
   }])
   .factory("venues",
-          ["$q", "$location", "$window", "$interpolate", "$rootScope",
-          function ($q, $location, $window, $intrpl, $rootScope) {
+          ["$location", "$window", "$interpolate",
+          function ($location, $window, $intrpl) {
 
     function endpointUrl(coords) {
       var tpl =
@@ -43,26 +43,23 @@ angular.module("lastroundApp.services", [])
     }
 
     return {
-      getOpenVenues: function (latLon) {
-        var defered = $q.defer();
+      getOpenVenues: function (latLon, onVenues, onVenueHours) {
         var source  = new $window.EventSource(endpointUrl(latLon));
-        var venuesObj = {};
 
         source.addEventListener('VENUES', function(e) {
           var venues = angular.fromJson(e.data);
+          var venuesObj = {};
 
           angular.forEach(venues, function (venue) {
             venuesObj[venue.id] = venue;
           });
 
-          defered.resolve(venuesObj);
+          onVenues(venuesObj);
         }, false);
 
         source.addEventListener('VENUE_HOURS', function(e) {
-          console.info("Got VENUE_HOURS", e);
           var data = angular.fromJson(e.data);
-          venuesObj[data.venueId].closingTime = data.closingTime;
-          //
+          onVenueHours(data);
         }, false);
 
         source.addEventListener('SERVER_ERROR', function() {
@@ -79,8 +76,6 @@ angular.module("lastroundApp.services", [])
             console.log("Connection closed");
           }
         }, false);
-
-        return defered.promise;
       }
     };
   }]);

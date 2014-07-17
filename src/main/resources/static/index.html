@@ -40,7 +40,10 @@
     <blink>...</blink>
     <ul>
       <li ng-repeat="(id, venue) in venues">
-        <a ng-href="https://foursquare.com/v/{{id}}">{{venue.name}}</a>
+      <a ng-href="https://foursquare.com/v/{{id}}">{{venue.name}}</a>
+        <span ng-show="venue.closingTime">
+          closing time: <strong>{{venue.closingTime.hours}}:{{venue.closingTime.minutes}}</strong>
+        </span>
       </li>
     </ul>
   </body>
