@@ -1,0 +1,11 @@
+{
+  "undef": true,
+  "strict": true,
+  "unused": true,
+  "newcap": true,
+  "browser": true,
+  "camelcase": true,
+  "globals": {
+    "angular": false
+  }
+}
