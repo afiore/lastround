@@ -48,13 +48,7 @@ angular.module("lastroundApp.services", [])
 
         source.addEventListener('VENUES', function(e) {
           var venues = angular.fromJson(e.data);
-          var venuesObj = {};
-
-          angular.forEach(venues, function (venue) {
-            venuesObj[venue.id] = venue;
-          });
-
-          onVenues(venuesObj);
+          onVenues(venues);
         }, false);
 
         source.addEventListener('VENUE_HOURS', function(e) {
