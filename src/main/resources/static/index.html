@@ -37,10 +37,10 @@
   <body ng-controller="FoosCtrl">
     <h1>Lastround API client</h1>
     <p>Lat Lon: <span id="lat-lon">{{coords.latitude}},{{coords.longitude}}</span></p>
-    <blink>...</blink>
+    <p>ordering: {{ordering}}</p>
     <ul>
-      <li ng-repeat="(id, venue) in venues">
-      <a ng-href="https://foursquare.com/v/{{id}}">{{venue.name}}</a>
+      <li ng-repeat="(id, venue) in venues | orderBy:ordering">
+        <a ng-href="https://foursquare.com/v/{{id}}">{{venue.name}}</a>
         <span ng-show="venue.closingTime">
           closing time: <strong>{{venue.closingTime.hours}}:{{venue.closingTime.minutes}}</strong>
         </span>

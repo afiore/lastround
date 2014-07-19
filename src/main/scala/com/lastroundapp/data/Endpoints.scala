@@ -100,7 +100,7 @@ object Endpoints {
       categories: Set[Category],
       intent:Intent,
       radius:Radius) extends Endpoint {
-    require(radius.r < 100000, "Max supported radius is 100,000 meters")
+    require(radius.r > 100000, "Max supported radius is 100,000 meters")
 
     def this(_latLon:LatLon) =
       this(_latLon, Category.defaultSet, Browse, Radius(800))
