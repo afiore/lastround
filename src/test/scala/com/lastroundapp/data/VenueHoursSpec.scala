@@ -32,7 +32,9 @@ class VenueHoursSpec extends WordSpec with Matchers {
     val tomorrow         = today.plusDays(1)
     val monday           = today.withDayOfWeek(1)
     val wednesday        = today.withDayOfWeek(3)
+    val thursday         = today.withDayOfWeek(4)
     val saturday         = today.withDayOfWeek(6)
+    val sunday           = today.withDayOfWeek(7)
 
     val closeAt3AM       = OpeningTime(TimeOfDay(22,30), TimeOfDay(3,0), true)
     val openInTheMorning = OpeningTime(TimeOfDay(9,0), TimeOfDay(13,30))
@@ -44,8 +46,8 @@ class VenueHoursSpec extends WordSpec with Matchers {
         List(openOnWeekEnd),
         List(openOnWednesday))
 
-    def closingTime(hs: Int, ms: Int)        = ClosingTime(TimeOfDay(hs, ms), false)
-    def inferedClosingTime(hs: Int, ms: Int) = ClosingTime(TimeOfDay(hs, ms), true)
+    //def closingTime(hs: Int, ms: Int)        = ClosingTime(TimeOfDay(hs, ms), false)
+    //def inferedClosingTime(hs: Int, ms: Int) = ClosingTime(TimeOfDay(hs, ms), true)
   }
 
   // Opening Times
@@ -67,9 +69,11 @@ class VenueHoursSpec extends WordSpec with Matchers {
       closeAt3AM.openOn(today.at(4,0)) shouldBe false
       closeAt3AM.openOn(tomorrow.at(8,0)) shouldBe false
     }
+  }
+  "VenueHours#closingTimeAfter" should {
     "return some closing time when datetime matches" in new OpeningTimes {
-      venueHours.closingTimeAfter(saturday.midnight).value should equal (closingTime(3,0))
-      venueHours.closingTimeAfter(wednesday.midnight).value should equal (inferedClosingTime(3,0))
+      venueHours.closingTimeAfter(saturday.midnight).value should equal (ClosingTime(sunday.at(3,0),false))
+      venueHours.closingTimeAfter(wednesday.midnight).value should equal (ClosingTime(thursday.at(3,0), true))
     }
     "return none when datetime doesn't match" in new OpeningTimes {
       venueHours.closingTimeAfter(monday.at(20,30)) should equal (None)

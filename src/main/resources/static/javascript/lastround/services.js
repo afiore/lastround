@@ -27,7 +27,7 @@ angular.module("lastroundApp.services", [])
 
     function endpointUrl(coords) {
       var tpl =
-        "{{proto}}://{{host}}:{{port}}/search/open-venues?"+
+        "{{proto}}://api.{{host}}:{{port}}/search/open-venues?"+
         "ll={{latLon}}&datetime={{date}}&token={{token}}";
 
       var context = {
@@ -47,7 +47,14 @@ angular.module("lastroundApp.services", [])
         var source  = new $window.EventSource(endpointUrl(latLon));
 
         source.addEventListener('VENUES', function(e) {
-          var venues = angular.fromJson(e.data);
+          var venues = angular.fromJson(e.data).map(function (v) {
+            var date = new Date();
+            date.setHours(0);
+            date.setMinutes(0);
+            v.closingDateTime = date;
+            return v;
+          });
+
           onVenues(venues);
         }, false);
 

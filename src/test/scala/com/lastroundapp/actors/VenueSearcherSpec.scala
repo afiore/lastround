@@ -1,5 +1,7 @@
 package com.lastroundapp.actors
 
+import org.joda.time.DateTime
+
 import scala.concurrent.duration._
 
 import akka.testkit.{TestProbe, ImplicitSender, TestActorRef, TestKit}
@@ -31,7 +33,7 @@ class VenueSearcherSpec(_system: ActorSystem) extends TestKit(_system)
   }
 
   val fsClient = new FoursquareTestClient()
-  val closingTime = ClosingTime(TimeOfDay(23, 30), false)
+  val closingTime = ClosingTime(DateTime.now.withDayOfWeek(Monday), false)
   val vh2 = VenueOpeningHours(
     List.empty,
     List(

@@ -73,23 +73,36 @@ object VenueHours {
     require(minutes >= 0 && minutes < 60, "minutes must be within 0 and 59")
   }
 
-  sealed case class OpeningTime(
-      start: TimeOfDay,
-      end: TimeOfDay,
-      endsNextDay: Boolean = false) {
+  object OpeningTime {
+    def mkDate(d: WeekDay, t: TimeOfDay) =
+      DateTime.now.withDayOfWeek(d).withTime(t.hours, t.minutes, 0, 0)
 
-    def openOn(dt: DateTime): Boolean = {
-      this.toInterval(timeFrameDay(dt))
-        .contains(dt)
-    }
     def timeFrameDay(dt: DateTime): WeekDay =
       if (isNightTime(dt))
         dt.minusDays(1).getDayOfWeek
       else
         dt.getDayOfWeek
 
-    private def isNightTime(dt: DateTime): Boolean =
+    def isNightTime(dt: DateTime): Boolean =
       (0 until 5) contains(dt.getHourOfDay)
+  }
+
+  sealed case class OpeningTime(
+      start: TimeOfDay,
+      end: TimeOfDay,
+      endsNextDay: Boolean = false) {
+
+    import OpeningTime._
+
+    def openOn(dt: DateTime): Boolean = {
+      this.toInterval(timeFrameDay(dt))
+        .contains(dt)
+    }
+
+    def toClosingTime(d: WeekDay): DateTime = {
+      val dt = DateTime.now.withDayOfWeek(d).withTime(end.hours, end.minutes, 0, 0)
+      if (endsNextDay) dt.plusDays(1) else dt
+    }
 
     private def toInterval(d: WeekDay): Interval = {
       val startD = mkDate(d, start)
@@ -99,9 +112,6 @@ object VenueHours {
       else
         new Interval(startD, endD)
     }
-
-    private def mkDate(d: WeekDay, t: TimeOfDay) =
-      DateTime.now.withDayOfWeek(d).withTime(t.hours, t.minutes, 0, 0)
   }
 
   sealed case class TimeFrame(days:Set[WeekDay], open:List[OpeningTime]) {
@@ -110,7 +120,7 @@ object VenueHours {
       else open.find(_.openOn(dt))
   }
 
-  sealed case class ClosingTime(time:TimeOfDay, infered: Boolean)
+  sealed case class ClosingTime(time: DateTime, infered: Boolean)
 
   object VenueOpeningHours {
     def empty = VenueOpeningHours(List.empty, List.empty)
@@ -126,7 +136,7 @@ object VenueHours {
     private def firstAfter(dt: DateTime, tfs: List[TimeFrame], infered: Boolean): Option[ClosingTime] =
       tfs.view.map(_.openingTimeAfter(dt))
         .collectFirst {
-           case Some(OpeningTime(_, t, _)) => ClosingTime(t, infered)
+           case Some(ot) => ClosingTime(ot.toClosingTime(dt.getDayOfWeek), infered)
         }
   }
 
@@ -211,8 +221,7 @@ object VenueHours {
 
     implicit object ClosingTime2Json extends JsonFormat[ClosingTime] {
       def write(ct: ClosingTime): JsValue = JsObject(
-        "hours"   -> JsNumber(ct.time.hours),
-        "minutes" -> JsNumber(ct.time.minutes),
+        "time"    -> JsString(ct.time.toInstant.toString),
         "infered" -> JsBoolean(ct.infered)
       )
       def read(v:JsValue):ClosingTime = ???

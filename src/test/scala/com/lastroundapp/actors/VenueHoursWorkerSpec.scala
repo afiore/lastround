@@ -1,7 +1,7 @@
 package com.lastroundapp.actors
 
-import com.lastroundapp.data.VenueHours.{TimeOfDay, ClosingTime}
-import com.lastroundapp.services.FoursquareClient.VenueSearchQuery
+import com.lastroundapp.data.VenueHours.{Monday, ClosingTime}
+import org.joda.time.DateTime
 
 import scala.concurrent.duration._
 
@@ -26,8 +26,9 @@ class VenueHoursWorkerSpec extends TestKit(ActorSystem("test-system", akkaConfig
   }
 
   val fsClient = new FoursquareTestClient
+  val venueClosingDateTime = DateTime.now.withDayOfWeek(Monday).withTime(23,30,0,0)
   val worker = TestActorRef(new VenueHoursWorker(fsClient))
-  val closingTime = ClosingTime(venueClosingTime, true)
+  val closingTime = ClosingTime(venueClosingDateTime, true)
 
   "VenueHoursWorker" when {
     "Foursquare responds with success" when {

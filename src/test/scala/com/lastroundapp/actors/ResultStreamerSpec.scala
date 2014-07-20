@@ -3,7 +3,8 @@ package com.lastroundapp.actors
 import com.lastroundapp.actors.VenueHoursWorker.GotVenueHoursFor
 import com.lastroundapp.actors.VenueSearcher.{EndOfVenueHours, GotVenueResults, RunSearch}
 import com.lastroundapp.data.Responses.ParamError
-import com.lastroundapp.data.VenueHours.{TimeOfDay, ClosingTime}
+import com.lastroundapp.data.VenueHours.{Monday, TimeOfDay, ClosingTime}
+import org.joda.time.DateTime
 
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
@@ -29,7 +30,8 @@ class ResultStreamerSpec extends TestKit(ActorSystem("test-system", akkaConfig))
   val timeout = 10000.millis
   val q = queryWithMatchingTime
   val venueList = List(venue1, venue2)
-  val closingTime = ClosingTime(TimeOfDay(23,30), false)
+  val venueClosingDateTime = DateTime.now.withDayOfWeek(Monday).withTime(23,30,0,0)
+  val closingTime = ClosingTime(venueClosingDateTime, false)
   val responder = TestProbe()
   val searcher = TestProbe()
 
