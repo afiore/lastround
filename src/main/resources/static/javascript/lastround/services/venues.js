@@ -1,29 +1,8 @@
-"use strict";
-angular.module("lastroundApp.services", [])
-  .factory("geolocation", ["$q", function ($q) {
-    'use strict';
-
-    return {
-      getCoords: function () {
-        var deferred   = $q.defer(),
-            geoLocOpts = { timeout: 10000 };
-
-        function onSuccess (pos) {
-          deferred.resolve(pos.coords);
-        }
-        function onError () {}
-
-        navigator
-          .geolocation
-          .getCurrentPosition(onSuccess, onError, geoLocOpts);
-
-        return deferred.promise;
-      }
-    };
-  }])
+angular.module("lastroundApp.services.venues", [])
   .factory("venues",
           ["$location", "$window", "$interpolate",
           function ($location, $window, $intrpl) {
+    "use strict";
 
     function endpointUrl(coords) {
       var tpl =

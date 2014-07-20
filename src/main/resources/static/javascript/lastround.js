@@ -1,5 +1,7 @@
 'use strict';
-var lastroundApp = angular.module('lastroundApp', ['lastroundApp.services']);
+var lastroundApp = angular.module('lastroundApp', [
+                                  'lastroundApp.services.geolocation',
+                                  'lastroundApp.services.venues']);
 
 lastroundApp.controller('FoosCtrl',
                        ['$scope', 'geolocation', 'venues',
@@ -7,9 +9,12 @@ lastroundApp.controller('FoosCtrl',
 
   $scope.ordering = "-closingDateTime";
 
+  $scope.fetching = true;
+
   function onVenues (venues) {
     $scope.$apply(function () {
-      $scope.venues = venues;
+      $scope.venues   = venues;
+      $scope.fetching = false;
     });
   }
 
