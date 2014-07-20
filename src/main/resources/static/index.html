@@ -2,37 +2,23 @@
   <head>
     <meta charset="utf-8">
     <title>Hello world</title>
+    <!-- vendored libraries -->
     <script src="javascript/vendor/angular.js"></script>
+    <script src="javascript/vendor/angular-route.js"></script>
+    <!-- lastround controllers -->
+    <script src="javascript/lastround/controllers/venues.js"></script>
+    <script src="javascript/lastround/controllers/settings.js"></script>
+    <!-- lastround controllers -->
     <script src="javascript/lastround/services/geolocation.js"></script>
     <script src="javascript/lastround/services/venues.js"></script>
+    <!-- lastround router -->
     <script src="javascript/lastround.js"></script>
   </head>
-  <body ng-controller="FoosCtrl">
+  <body>
     <h1>Lastround App</h1>
-    <p>Lat Lon: <span id="lat-lon">{{coords.latitude}},{{coords.longitude}}</span></p>
-    <select name="ordering" ng-model="ordering">
-        <option value="location.distance">Distance</option>
-        <option value="-closingDateTime">Closing time</option>
-    </select>
-    <div ng-if="fetching">Fetching data...</div>
-    <table ng-if="!fetching">
-      <caption>Venues near you</caption>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Distance</th>
-          <th>Closing time</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr ng-repeat="venue in venues | orderBy:ordering">
-          <td><a ng-href="https://foursquare.com/v/{{id}}">{{venue.name}}</a></td>
-          <td>{{venue.location.distance}}</td>
-          <td>
-            <span ng-show="venue.closingTime">{{venue.closingDateTime.getHours()}}:{{venue.closingDateTime.getMinutes()}}</strong></span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div>
+      <a href="#settings">Settings</a>
+    </div>
+    <div ng-view></div>
   </body>
 </html>

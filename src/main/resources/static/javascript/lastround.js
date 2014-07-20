@@ -1,36 +1,23 @@
-'use strict';
-var lastroundApp = angular.module('lastroundApp', [
-                                  'lastroundApp.services.geolocation',
-                                  'lastroundApp.services.venues']);
+var lastroundApp = angular.module('lastroundApp',
+                                 ['ngRoute',
+                                  'lastroundApp.controllers.settings',
+                                  'lastroundApp.controllers.venues']);
 
-lastroundApp.controller('FoosCtrl',
-                       ['$scope', 'geolocation', 'venues',
-                       function ($scope, geolocation, venues) {
+lastroundApp.config(['$routeProvider', function ($routeProvider) {
+  'use strict';
 
-  $scope.ordering = "-closingDateTime";
-
-  $scope.fetching = true;
-
-  function onVenues (venues) {
-    $scope.$apply(function () {
-      $scope.venues   = venues;
-      $scope.fetching = false;
-    });
+  function tplPath(tpl) {
+    return "javascript/lastround/partials/" + tpl;
   }
 
-  function onVenueHours (vh) {
-    $scope.$apply(function () {
-      $scope.venues.filter(function(v) {
-        return v.id === vh.venueId ;
-      }).forEach(function (v) {
-        v.closingTime = vh.closingTime;
-        v.closingDateTime = new Date(vh.closingTime.time);
-      });
+  $routeProvider
+    .when('/settings', {
+      templateUrl: tplPath('settings.html'),
+      controller: 'SettingsCtrl'
+    }).when('/venues', {
+      templateUrl: tplPath('venues.html'),
+      controller: 'VenuesCtrl'
+    }).otherwise({
+      redirectTo: '/venues'
     });
-  }
-
-  geolocation.getCoords().then(function (coords) {
-    $scope.coords = coords;
-    venues.getOpenVenues(coords, onVenues, onVenueHours);
-  });
 }]);
