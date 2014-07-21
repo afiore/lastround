@@ -16,7 +16,7 @@
     </thead>
     <tbody>
       <tr ng-repeat="venue in venues | orderBy:ordering">
-        <td><a ng-href="https://foursquare.com/v/{{id}}">{{venue.name}}</a></td>
+        <td><a ng-href="https://foursquare.com/v/{{venue.id}}">{{venue.name}}</a></td>
         <td>{{venue.location.distance}}</td>
         <td>
           <span ng-show="venue.closingTime">{{venue.closingDateTime.getHours()}}:{{venue.closingDateTime.getMinutes()}}</strong></span>

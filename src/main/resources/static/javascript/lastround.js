@@ -1,7 +1,8 @@
 var lastroundApp = angular.module('lastroundApp',
                                  ['ngRoute',
                                   'lastroundApp.controllers.settings',
-                                  'lastroundApp.controllers.venues']);
+                                  'lastroundApp.controllers.venues',
+                                  'lastroundApp.controller.nav']);
 
 lastroundApp.config(['$routeProvider', function ($routeProvider) {
   'use strict';

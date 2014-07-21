@@ -1,24 +1,31 @@
 <html ng-app="lastroundApp">
   <head>
     <meta charset="utf-8">
-    <title>Hello world</title>
+    <title>Lastround | places open near you</title>
     <!-- vendored libraries -->
     <script src="javascript/vendor/angular.js"></script>
     <script src="javascript/vendor/angular-route.js"></script>
     <!-- lastround controllers -->
     <script src="javascript/lastround/controllers/venues.js"></script>
     <script src="javascript/lastround/controllers/settings.js"></script>
+    <script src="javascript/lastround/controllers/nav.js"></script>
     <!-- lastround controllers -->
     <script src="javascript/lastround/services/geolocation.js"></script>
     <script src="javascript/lastround/services/venues.js"></script>
     <!-- lastround router -->
     <script src="javascript/lastround.js"></script>
+    <style>
+      li.active {
+        color: #FFD700;
+      }
+    </style>
   </head>
   <body>
     <h1>Lastround App</h1>
-    <div>
-      <a href="#settings">Settings</a>
-    </div>
+    <ul ng-controller="NavCtrl" class="menu">
+      <li ng-class="{ active: isActive('/settings')}"><a href="#/settings">Settings</a></li>
+      <li ng-class="{ active: isActive('/venues')}"><a href="#/venues">Search</a></li>
+    </ul>
     <div ng-view></div>
   </body>
 </html>

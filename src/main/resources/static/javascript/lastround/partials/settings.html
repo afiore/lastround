@@ -1,3 +1,26 @@
 <div>
-  <p>hELLO! {{foo}}</p>
+  <form>
+    <fieldset>
+      <legend>Venue Categories</legend>
+      <table>
+        <tr ng-repeat="category in venueCategories">
+          <td><label for="category-{{category.code}}">{{category.name}}</label><td>
+          <td>
+            <input type="checkbox"
+                   id="category-{{category.code}}"
+                   value="{{category.code}}"
+                   ng-model-options="{ getterSetter: true }"
+                   ng-model="category.selected" />
+          </td>
+        </tr>
+      </table>
+    </fieldset>
+    <fieldset>
+      <legend>Location</legend>
+      <label for="settings-radius">Radius</label>
+      <input type="number" id="settings-radius" name="radius"
+             min="1000" max="10000"
+             ng-model="settings.radius" />
+    </fieldset>
+  </form>
 </div>
