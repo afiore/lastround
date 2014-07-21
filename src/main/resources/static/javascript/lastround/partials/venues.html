@@ -1,5 +1,6 @@
 <div>
-  <p>Lat Lon: <span id="lat-lon">{{coords.latitude}},{{coords.longitude}}</span></p>
+  <div ng-if="!coords">Geolocating...</div>
+  <div ng-if="coords">{{coords.latitude}},{{coords.longitude}}</div>
   <select name="ordering" ng-model="ordering">
       <option value="location.distance">Distance</option>
       <option value="-closingDateTime">Closing time</option>

@@ -1,10 +1,12 @@
-angular.module("lastroundApp.services.venues", [])
+angular.module("lastroundApp.services.venues", 
+              ["lastroundApp.services.settings"])
   .factory("venues",
-          ["$location", "$window", "$interpolate",
-          function ($location, $window, $intrpl) {
+          ["$location", "$window", "$interpolate", "settings",
+          function ($location, $window, $intrpl, settingsSrv) {
     "use strict";
 
     function endpointUrl(coords) {
+      var settings = settingsSrv.readSettings();
       var tpl =
         "{{proto}}://api.{{host}}:{{port}}/search/open-venues?"+
         "ll={{latLon}}&datetime={{date}}&token={{token}}";
@@ -14,6 +16,7 @@ angular.module("lastroundApp.services.venues", [])
         latLon: coords.latitude.toFixed(2) + "," + coords.longitude.toFixed(2),
         host: $location.host(),
         port: $location.port(),
+        radius: settings.radius,
         proto: $location.protocol(),
         date: (new Date()).valueOf(),
       };

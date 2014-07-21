@@ -1,15 +1,10 @@
-angular.module('lastroundApp.controllers.settings', [])
+angular.module('lastroundApp.controllers.settings',
+              ['lastroundApp.services.settings'])
   .controller('SettingsCtrl', [
-                '$scope', '$window',
-                 function ($scope, $window) {
+              '$scope', '$window', 'settings',
+               function ($scope, $window, settings) {
   'use strict';
 
-  var defaultSettings    = {
-    radius: 2000,
-    categories: {},
-  };
-  var rawSettings        = window.localStorage.getItem("settings");
-  var settings           = rawSettings ? JSON.parse(rawSettings) : defaultSettings;
   var settingsHasErrors  = function () {
     return !$scope.settingsForm.$valid;
   };
@@ -20,17 +15,19 @@ angular.module('lastroundApp.controllers.settings', [])
   }
   Object.defineProperty(Venue.prototype, "selected", {
     get: function () {
-      return !!$scope.settings.categories[this.code];
+      return !!$scope.settings.venueCategories[this.code];
     },
     set: function (input) {
-      $scope.settings.categories[this.code] = input;
+      $scope.settings.venueCategories[this.code] = input;
     }
   });
 
-  $scope.settings = settings;
+  $scope.settings = settings.readSettings();
+
   $scope.$watch("settings", function (oldVal, newVal) {
-    if (oldVal === newVal || settingsHasErrors()) { return ; }
-    $window.localStorage.setItem("settings", JSON.stringify($scope.settings));
+    if (oldVal === newVal || settingsHasErrors()) { return; }
+    console.info($scope.settings);
+    settings.writeSettings($scope.settings);
   }, true);
 
   $scope.venueCategories = [
