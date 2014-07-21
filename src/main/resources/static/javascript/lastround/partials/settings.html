@@ -1,5 +1,5 @@
 <div>
-  <form>
+  <form name="settingsForm">
     <fieldset>
       <legend>Venue Categories</legend>
       <table>
@@ -20,7 +20,8 @@
       <label for="settings-radius">Radius</label>
       <input type="number" id="settings-radius" name="radius"
              min="1000" max="10000"
-             ng-model="settings.radius" />
+             ng-model="settings.radius"
+             required />
     </fieldset>
   </form>
 </div>

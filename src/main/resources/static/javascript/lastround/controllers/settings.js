@@ -1,4 +1,5 @@
-angular.module('lastroundApp.controllers.settings', []).controller('SettingsCtrl', [
+angular.module('lastroundApp.controllers.settings', [])
+  .controller('SettingsCtrl', [
                 '$scope', '$window',
                  function ($scope, $window) {
   'use strict';
@@ -9,6 +10,9 @@ angular.module('lastroundApp.controllers.settings', []).controller('SettingsCtrl
   };
   var rawSettings        = window.localStorage.getItem("settings");
   var settings           = rawSettings ? JSON.parse(rawSettings) : defaultSettings;
+  var settingsHasErrors  = function () {
+    return !$scope.settingsForm.$valid;
+  };
 
   function Venue (name, code) {
     this.name = name;
@@ -25,7 +29,7 @@ angular.module('lastroundApp.controllers.settings', []).controller('SettingsCtrl
 
   $scope.settings = settings;
   $scope.$watch("settings", function (oldVal, newVal) {
-    if (oldVal === newVal) { return ; }
+    if (oldVal === newVal || settingsHasErrors()) { return ; }
     $window.localStorage.setItem("settings", JSON.stringify($scope.settings));
   }, true);
 

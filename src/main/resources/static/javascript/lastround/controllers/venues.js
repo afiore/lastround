@@ -1,6 +1,7 @@
 angular.module('lastroundApp.controllers.venues',
               ['lastroundApp.services.geolocation',
-               'lastroundApp.services.venues']).controller('VenuesCtrl', [
+               'lastroundApp.services.venues'])
+  .controller('VenuesCtrl', [
                 '$scope', 'geolocation', 'venues',
                  function ($scope, geolocation, venues) {
   'use strict';
