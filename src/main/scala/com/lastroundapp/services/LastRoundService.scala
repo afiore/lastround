@@ -40,14 +40,17 @@ trait LastRoundService extends HttpService {
         respondWithHeaders(RawHeader("Access-Control-Allow-Origin", "*")) {
           optionalHeaderValueByName("Accept") { accept =>
             val format = Format.fromHeaderValue(accept)
-              parameters('ll.as[LatLon],
-                         'datetime.as[DateTime],
-                         'token.as[AccessToken]) { (latLon, datetime, token) => ctx =>
+              parameters(
+                'll.as[LatLon],
+                'token.as[AccessToken],
+                'radius.as[Int] ? 2000,
+                'categories.as[Set[Category]] ? Category.defaultSet,
+                'datetime.as[DateTime]) { (latLon, token, r, categories, datetime) => ctx =>
 
                 actorRefFactory.actorOf(
                   Props(
                     classOf[ResultStreamer],
-                    VenueSearchQuery(latLon, token, datetime, format),
+                    VenueSearchQuery(latLon, token, Radius(r), categories, datetime, format),
                     venueSearcher,
                     ctx.responder
                   ),

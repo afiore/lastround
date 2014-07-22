@@ -63,6 +63,14 @@ object Endpoints {
 
   sealed case class Category(id: String)
   object Category {
+    implicit val string2CategorySet = new FromStringDeserializer[Set[Category]] {
+      def apply(s: String) = {
+        val categories = s.split(',').map { (s:String) => Category(s) }.toSet
+        if (categories.isEmpty) Left(MalformedContent(s"Empty categories' set"))
+        else Right(categories)
+      }
+    }
+
     val Bar        = apply("4bf58dd8d48988d116941735")
     val NightClub  = apply("4bf58dd8d48988d11f941735")
     val Pub        = apply("4bf58dd8d48988d11b941735")
@@ -75,7 +83,7 @@ object Endpoints {
   }
 
   object Radius {
-    val default = 2000
+    val default = Radius(2000)
   }
   sealed case class Radius(r:Int)
 

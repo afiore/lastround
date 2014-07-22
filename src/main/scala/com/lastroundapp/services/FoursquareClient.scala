@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 
 import com.lastroundapp.data.{VenueId, VenueHoursResponse, VenueSearchResponse}
 import com.lastroundapp.data.VenueHours.{WeekDay, TimeOfDay}
-import com.lastroundapp.data.Endpoints.{AccessToken, LatLon}
+import com.lastroundapp.data.Endpoints.{Radius, Category, AccessToken, LatLon}
 
 import akka.actor.ActorContext
 import spray.http.{ContentType, MediaType}
@@ -44,6 +44,8 @@ object FoursquareClient {
   case class VenueSearchQuery(
       ll: LatLon,
       token: AccessToken,
+      radius: Radius,
+      categories: Set[Category],
       dateTime: DateTime,
       format: Format = EventStream)
 }

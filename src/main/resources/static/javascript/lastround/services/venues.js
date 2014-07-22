@@ -1,4 +1,4 @@
-angular.module("lastroundApp.services.venues", 
+angular.module("lastroundApp.services.venues",
               ["lastroundApp.services.settings"])
   .factory("venues",
           ["$location", "$window", "$interpolate", "settings",
@@ -6,10 +6,15 @@ angular.module("lastroundApp.services.venues",
     "use strict";
 
     function endpointUrl(coords) {
-      var settings = settingsSrv.readSettings();
-      var tpl =
+      var settings        = settingsSrv.readSettings();
+      var venueCategories = _.reduce(settings.venueCategories, function (acc, selected, category) {
+        return selected ? acc.concat([category]) : acc;
+      }, []).join(",");
+
+      var tpl             =
         "{{proto}}://api.{{host}}:{{port}}/search/open-venues?"+
-        "ll={{latLon}}&datetime={{date}}&token={{token}}";
+        "ll={{latLon}}&radius={{radius}}&categories={{categories}}"+
+        "&datetime={{date}}&token={{token}}";
 
       var context = {
         token: "514BEI2UIDTNON3RYD3SVLKZ3ZIBOPCUZQ1IS3WIM2JZLJQT",
@@ -17,6 +22,7 @@ angular.module("lastroundApp.services.venues",
         host: $location.host(),
         port: $location.port(),
         radius: settings.radius,
+        categories: venueCategories,
         proto: $location.protocol(),
         date: (new Date()).valueOf(),
       };

@@ -2,7 +2,7 @@ package com.lastroundapp.services
 
 import org.joda.time.DateTime
 
-import com.lastroundapp.data.Endpoints.{LatLon, AccessToken}
+import com.lastroundapp.data.Endpoints.{Category, Radius, LatLon, AccessToken}
 import akka.actor.ActorContext
 import scala.concurrent.ExecutionContext
 import com.lastroundapp.data._
@@ -35,8 +35,10 @@ object FoursquareTestClient {
   val vidSuccess = VenueId("success-venue")
 
   val ll = LatLon(45.0, 50.0)
-  val querySuccess = VenueSearchQuery(ll, AccessToken.default, DateTime.now)
-  val queryFailure = VenueSearchQuery(ll, AccessToken("wrong-token"), DateTime.now)
+  val q  = VenueSearchQuery(ll, _:AccessToken, Radius.default, Category.defaultSet, DateTime.now)
+
+  val querySuccess = q(AccessToken.default)
+  val queryFailure = q(AccessToken("wrong-token"))
 
   val queryWithNonMatchingTime =
     querySuccess.copy(dateTime = DateTime.now.withDayOfWeek(Tuesday))
