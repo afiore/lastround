@@ -37,7 +37,7 @@ class FoursquareClientImpl(val log: LoggingAdapter) extends FoursquareClient
     uriWithToken(token, new VenueHoursEndpoint((vid)))
 
   private def venueSearchUri(q:VenueSearchQuery) =
-    uriWithToken(q.token, new VenueSearchEndpoint(q.ll))
+    uriWithToken(q.token, new VenueSearchEndpoint(q.ll, q.categories, Browse, q.radius))
 
   private def uriWithToken[T: EndpointUri](token: AccessToken, ep: T): Uri =
     toUri(new AuthenticatedEndpoint(ep, token))
