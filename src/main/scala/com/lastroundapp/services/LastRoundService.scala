@@ -12,7 +12,7 @@ import org.joda.time.DateTime
 
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpCookie
-import spray.http.StatusCodes.{TemporaryRedirect, SeeOther, BadRequest}
+import spray.http.StatusCodes.{TemporaryRedirect, Found, BadRequest}
 import spray.routing.{HttpService, RequestContext}
 
 import Endpoints._
@@ -70,8 +70,8 @@ trait LastRoundService extends HttpService {
           detach() {
             onSuccess(oauth.getAccessToken(code)(context, ec)) {
               case Some(FSToken(t)) =>
-                setCookie(HttpCookie("authToken", t)) {
-                  redirect("/index.html", SeeOther)
+                setCookie(HttpCookie("authToken", t, path=Some("/"))) {
+                  redirect("/index.html", Found)
                 }
               case None =>
                 complete(BadRequest)

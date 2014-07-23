@@ -1,13 +1,18 @@
 angular.module('lastroundApp.controllers.venues',
-              ['lastroundApp.services.geolocation',
+              ['ngCookies',
+               'lastroundApp.services.geolocation',
                'lastroundApp.services.venues'])
+
   .controller('VenuesCtrl', [
-                '$scope', 'geolocation', 'venues',
-                 function ($scope, geolocation, venues) {
+                '$scope', '$cookies', 'geolocation', 'venues',
+                 function ($scope, $cookies, geolocation, venues) {
   'use strict';
 
-  $scope.ordering = "-closingDateTime";
-  $scope.fetching = true;
+  debugger;
+
+  $scope.ordering  = "-closingDateTime";
+  $scope.fetching  = true;
+  $scope.authToken = $cookies.authToken;
 
   function onVenues (venues) {
     $scope.$apply(function () {

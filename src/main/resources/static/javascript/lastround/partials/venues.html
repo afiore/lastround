@@ -1,4 +1,5 @@
 <div>
+  <div ng-if="authToken">Got token!</div>
   <div ng-if="!coords">Geolocating...</div>
   <div ng-if="coords">{{coords.latitude}},{{coords.longitude}}</div>
   <select name="ordering" ng-model="ordering">
