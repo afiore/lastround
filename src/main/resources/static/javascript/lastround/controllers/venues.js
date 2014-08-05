@@ -8,8 +8,6 @@ angular.module('lastroundApp.controllers.venues',
                  function ($scope, $cookies, geolocation, venues) {
   'use strict';
 
-  debugger;
-
   $scope.ordering  = "-closingDateTime";
   $scope.fetching  = true;
   $scope.authToken = $cookies.authToken;
@@ -34,6 +32,6 @@ angular.module('lastroundApp.controllers.venues',
 
   geolocation.getCoords().then(function (coords) {
     $scope.coords = coords;
-    venues.getOpenVenues(coords, onVenues, onVenueHours);
+    venues.getOpenVenues(coords, onVenues, $cookies.authToken, onVenueHours);
   });
 }]);
