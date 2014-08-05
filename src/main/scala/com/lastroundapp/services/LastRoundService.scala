@@ -37,26 +37,25 @@ trait LastRoundService extends HttpService {
   val route =
     path("search" / "open-venues") {
       get {
-        respondWithHeaders(RawHeader("Access-Control-Allow-Origin", "*")) {
-          optionalHeaderValueByName("Accept") { accept =>
-            val format = Format.fromHeaderValue(accept)
-              parameters(
-                'll.as[LatLon],
-                'token.as[AccessToken],
-                'radius.as[Int] ? 2000,
-                'categories.as[Set[Category]] ? Category.defaultSet,
-                'datetime.as[DateTime]) { (latLon, token, r, categories, datetime) => ctx =>
+        optionalHeaderValueByName("Accept") { accept =>
+          val format = Format.fromHeaderValue(accept)
 
-                actorRefFactory.actorOf(
-                  Props(
-                    classOf[ResultStreamer],
-                    VenueSearchQuery(latLon, token, Radius(r), categories, datetime, format),
-                    venueSearcher,
-                    ctx.responder
-                  ),
-                  s"result-streamer-${UUID.randomUUID()}"
-                )
-            }
+          parameters(
+            'll.as[LatLon],
+            'token.as[AccessToken],
+            'radius.as[Int] ? 2000,
+            'categories.as[Set[Category]] ? Category.defaultSet,
+            'datetime.as[DateTime]) { (latLon, token, r, categories, datetime) => ctx =>
+
+            actorRefFactory.actorOf(
+              Props(
+                classOf[ResultStreamer],
+                VenueSearchQuery(latLon, token, Radius(r), categories, datetime, format),
+                venueSearcher,
+                ctx.responder
+              ),
+              s"result-streamer-${UUID.randomUUID()}"
+            )
           }
         }
       }

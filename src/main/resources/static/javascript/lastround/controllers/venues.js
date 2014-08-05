@@ -32,6 +32,6 @@ angular.module('lastroundApp.controllers.venues',
 
   geolocation.getCoords().then(function (coords) {
     $scope.coords = coords;
-    venues.getOpenVenues(coords, onVenues, $cookies.authToken, onVenueHours);
+    venues.getOpenVenues(coords, $cookies.authToken, onVenues, onVenueHours);
   });
 }]);
