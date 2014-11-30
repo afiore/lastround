@@ -10,15 +10,12 @@ import com.lastroundapp.data.{FSToken, Endpoints}
 import java.util.UUID
 import org.joda.time.DateTime
 
-import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpCookie
 import spray.http.StatusCodes.{TemporaryRedirect, Found, BadRequest}
-import spray.routing.{HttpService, RequestContext}
+import spray.routing.{Route, HttpService}
 
 import Endpoints._
 import com.lastroundapp.services.FoursquareClient.{VenueSearchQuery, Format}
-import com.lastroundapp.data.VenueHours.DateTimeDeserialiser
-import spray.httpx.encoding.Gzip
 
 class LastRoundActor (val venueSearcher:ActorRef) extends Actor with LastRoundService {
   def actorRefFactory  = context
@@ -33,6 +30,7 @@ trait LastRoundService extends HttpService {
   val venueSearcher: ActorRef
 
   implicit val ec = context.dispatcher
+  import com.lastroundapp.data.VenueHours.DateTimeDeserialiser
 
   val route =
     path("search" / "open-venues") {
@@ -82,9 +80,13 @@ trait LastRoundService extends HttpService {
     optionalCookie("authToken") {
       case Some(cookie) => {
         setCookie(cookie) {
-          getFromResourceDirectory("static")
+          serveStaticAssets
         }
       }
-      case _ => getFromResourceDirectory("static")
+      case _ => serveStaticAssets
     }
+
+  private val serveStaticAssets: Route = path("") {
+    getFromResource("static/index.html")
+  } ~ getFromDirectory("static")
 }

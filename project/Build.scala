@@ -6,9 +6,16 @@ object BuildSettings {
     organization := "com.lastroundapp",
     version := "1.0-SNAPSHOT",
     scalaVersion := "2.11.0",
+    fork := true,
     scalacOptions ++= Seq("-deprecation", "-Ywarn-unused-import", "-unchecked", "-feature", "-encoding", "utf8"),
     scalacOptions in Test ++= Seq("-Yrangepos"),
-    scalacOptions in (Compile, console) ~= (_.filterNot(_ == "-Ywarn-unused-import"))
+    scalacOptions in (Compile, console) ~= (_.filterNot(_ == "-Ywarn-unused-import")),
+    javaOptions ++= Seq(
+      "-Dconfig.overrides=" + baseDirectory(_ / "overrides.conf" ).value
+    ),
+    javaOptions in Test ++= Seq(
+      "-Dconfig.overrides=" + baseDirectory(_ / "overrides.conf" ).value
+    )
   )
 }
 
@@ -55,25 +62,17 @@ object LastroundauthBuild extends Build {
   import BuildSettings.buildSettings
   import Dependencies.commonDeps
   import spray.revolver.RevolverPlugin.Revolver
-  import org.scalastyle.sbt.ScalastylePlugin.{Settings => ScalastyleSettings}
   import sbtassembly.Plugin.AssemblyKeys
   import sbtassembly.Plugin.assemblySettings
 
-  val truncateLog = taskKey[Unit]("truncates the main logfile")
-  val truncateLogTask = truncateLog := {
-    println("truncating logs...")
-  }
-  val runTask = (run in Compile) <<= (run in Compile) dependsOn truncateLog
 
   lazy val root = Project("lastround-auth",
     file("."),
     settings = buildSettings ++
-      ScalastyleSettings ++
       assemblySettings ++
-      Revolver.settings ++
-      truncateLogTask ++
-      runTask
-      ) settings (
+      Revolver.settings
+
+  ) settings (
     libraryDependencies ++= commonDeps,
         resolvers := Resolvers.resolvers,
         mainClass in AssemblyKeys.assembly := Some("com.lastroundapp.Boot")

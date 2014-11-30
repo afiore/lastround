@@ -135,6 +135,8 @@ object Endpoints {
   case class ApiVersion(version: Int) extends AnyVal
 
   object AccessToken {
+    val default = AccessToken("test-token")
+
     implicit val string2AccessToken = new FromStringDeserializer[AccessToken] {
       def apply(s: String) =
         if (s.isEmpty) Left(MalformedContent("Blank token")) else Right(AccessToken(s))
@@ -143,7 +145,6 @@ object Endpoints {
       val paramName = "oauth_token"
       def paramValue(t:AccessToken) = t.token
     }
-    val default = AccessToken(Settings.foursquareAccessToken)
   }
   case class AccessToken(token: String) extends AnyVal
 

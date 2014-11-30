@@ -1,0 +1,6 @@
+lastround {
+  foursquare {
+    client-id    = "..."
+    secret       = "..."
+  }
+}

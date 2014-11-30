@@ -22,10 +22,5 @@ object Boot extends App {
   val service =
     system.actorOf(Props(classOf[LastRoundActor], venueSearcher), "lastround-service")
 
-  // val q = VenueSearchQuery(LatLon(51.545, -0.0553), AccessToken.default)
-  //venueSearcher ! RunSearch(q)
-  //venueSearcher ! RunSearch(q)
-
-  // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ! Http.Bind(service, interface = "0.0.0.0", port = 8080)
 }
