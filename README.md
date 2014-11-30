@@ -22,6 +22,6 @@ A jar archive containing Lastround and all its dependencies can be built by exec
 the `sbt assembly` task. The task will execute the project test suite and, when
 no errors occur, produce a jar file. Once built, the jar can be executed by running:
 
-    java -Doverrides.conf=overrides.conf -jar /target/scala-2.11/lastround-assembly-1.0-SNAPSHOT.jar
+    java -Doverrides.conf=overrides.conf -jar target/scala-2.11/lastround-assembly-1.0-SNAPSHOT.jar
 
 The application UI can be accessed by visiting http://localhost:8080.
