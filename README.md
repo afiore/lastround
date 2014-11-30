@@ -15,7 +15,7 @@ To run an instance of Lastround [first register a Foursquare app](https://foursq
 and get hold of your own credentials (i.e. client id, and secret). At this point,
 create a overrides.conf file and place it into the project root folder (see `overrides.conf.example`).
 
-# Building and running the app
+## Building and running
 
 A jar archive containing Lastround and all its dependencies can be built by executing
 the `sbt assembly` task. The task will execute the project test suite and, when
